@@ -1,4 +1,14 @@
 spring:
+  ai:
+    openai:
+      # 通过环境变量注入，避免明文 key 进 git 历史。
+      # 本地：export DASHSCOPE_API_KEY=sk-xxx；或加入 IDEA Run Configuration → Environment variables
+      api-key: ${DASHSCOPE_API_KEY:}
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      chat:
+        options:
+          model: qwen-plus
+          temperature: 0.7
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3307/irp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
