@@ -52,7 +52,11 @@ logging:
 # 自定义 JWT 配置（被 JwtProperties 绑定）
 app:
   jwt:
-    secret: "change-me-please-use-at-least-32-bytes-secret-key-for-hs256"
+    # 强制环境变量注入（至少 32 字节）。本地：
+    #   export JWT_SECRET=$(openssl rand -base64 48)
+    # IDE Run Configuration → Environment variables 中加一条同名条目即可。
+    # 未设置时 Spring 会以字面量 `${JWT_SECRET}` 注入，导致 Keys.hmacShaKeyFor 因长度不足抛错（fail-fast）。
+    secret: ${JWT_SECRET}
     expire-millis: 86400000          # 24h
     header: Authorization
     prefix: "Bearer "
