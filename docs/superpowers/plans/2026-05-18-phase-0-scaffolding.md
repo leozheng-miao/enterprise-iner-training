@@ -41,18 +41,22 @@ enterprise-iner-training/
 │   │   ├── UserDetailsServiceImpl.java                 ← 新增
 │   │   ├── SecurityConfig.java                         ← 新增
 │   │   └── SecurityUtils.java                          ← 新增
-│   ├── user/
-│   │   ├── entity/User.java                            ← 新增
-│   │   ├── mapper/UserMapper.java                      ← 新增
-│   │   ├── dto/UserRegisterRequest.java                ← 新增
-│   │   ├── dto/UserLoginRequest.java                   ← 新增
-│   │   ├── vo/LoginVO.java                             ← 新增
-│   │   ├── vo/UserVO.java                              ← 新增
-│   │   ├── service/UserService.java                    ← 新增
-│   │   ├── service/impl/UserServiceImpl.java           ← 新增
-│   │   └── controller/UserController.java              ← 新增
-│   └── health/
-│       └── HealthController.java                       ← 新增
+│   ├── entity/
+│   │   └── User.java                                   ← 新增
+│   ├── mapper/                                          ← @MapperScan 唯一目标
+│   │   └── UserMapper.java                             ← 新增
+│   ├── dto/
+│   │   ├── UserRegisterRequest.java                    ← 新增
+│   │   └── UserLoginRequest.java                       ← 新增
+│   ├── vo/
+│   │   ├── LoginVO.java                                ← 新增
+│   │   └── UserVO.java                                 ← 新增
+│   ├── service/
+│   │   ├── UserService.java                            ← 新增
+│   │   └── impl/UserServiceImpl.java                   ← 新增
+│   └── controller/
+│       ├── UserController.java                        ← 新增
+│       └── HealthController.java                      ← 新增
 ├── src/test/java/com/leo/enterpriseinertraining/
 │   ├── EnterpriseInerTrainingApplicationTests.java     ← 沿用
 │   ├── security/JwtUtilsTest.java                      ← 新增
@@ -679,14 +683,14 @@ git commit -m "feat(error): add user/jwt error codes and security/validation exc
 ## Task 6：User 实体 + Mapper（MyBatis-Flex）
 
 **Files:**
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/entity/User.java`
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/mapper/UserMapper.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/entity/User.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/mapper/UserMapper.java`
 - Modify: `src/main/java/com/leo/enterpriseinertraining/EnterpriseInerTrainingApplication.java`
 
 - [ ] **Step 6.1：创建 `User.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.entity;
+package com.leo.enterpriseinertraining.entity;
 
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
@@ -719,10 +723,10 @@ public class User implements Serializable {
 - [ ] **Step 6.2：创建 `UserMapper.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.mapper;
+package com.leo.enterpriseinertraining.mapper;
 
 import com.mybatisflex.core.BaseMapper;
-import com.leo.enterpriseinertraining.user.entity.User;
+import com.leo.enterpriseinertraining.entity.User;
 
 public interface UserMapper extends BaseMapper<User> {
 }
@@ -740,7 +744,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.leo.enterpriseinertraining.**.mapper")
+@MapperScan("com.leo.enterpriseinertraining.mapper")
 public class EnterpriseInerTrainingApplication {
 
     public static void main(String[] args) {
@@ -757,7 +761,7 @@ Expected：BUILD SUCCESS。
 - [ ] **Step 6.5：提交**
 
 ```bash
-git add src/main/java/com/leo/enterpriseinertraining/user/ src/main/java/com/leo/enterpriseinertraining/EnterpriseInerTrainingApplication.java
+git add src/main/java/com/leo/enterpriseinertraining/entity/ src/main/java/com/leo/enterpriseinertraining/mapper/ src/main/java/com/leo/enterpriseinertraining/EnterpriseInerTrainingApplication.java
 git commit -m "feat(user): User entity + UserMapper + global MapperScan"
 ```
 
@@ -925,7 +929,7 @@ git commit -m "feat(security): JwtProperties + JwtUtils with TDD"
 ```java
 package com.leo.enterpriseinertraining.security;
 
-import com.leo.enterpriseinertraining.user.entity.User;
+import com.leo.enterpriseinertraining.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -962,8 +966,8 @@ public class LoginUser implements UserDetails {
 ```java
 package com.leo.enterpriseinertraining.security;
 
-import com.leo.enterpriseinertraining.user.entity.User;
-import com.leo.enterpriseinertraining.user.mapper.UserMapper;
+import com.leo.enterpriseinertraining.entity.User;
+import com.leo.enterpriseinertraining.mapper.UserMapper;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -971,7 +975,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import static com.leo.enterpriseinertraining.user.entity.table.UserTableDef.USER;
+import static com.leo.enterpriseinertraining.entity.table.UserTableDef.USER;
 
 @Service
 @RequiredArgsConstructor
@@ -1018,8 +1022,8 @@ git commit -m "feat(security): LoginUser + UserDetailsServiceImpl"
 ```java
 package com.leo.enterpriseinertraining.security;
 
-import com.leo.enterpriseinertraining.user.entity.User;
-import com.leo.enterpriseinertraining.user.mapper.UserMapper;
+import com.leo.enterpriseinertraining.entity.User;
+import com.leo.enterpriseinertraining.mapper.UserMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -1194,16 +1198,16 @@ git commit -m "feat(security): stateless SecurityConfig with JWT filter + Securi
 ## Task 11：用户注册接口
 
 **Files:**
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/dto/UserRegisterRequest.java`
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/vo/UserVO.java`
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/service/UserService.java`
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/service/impl/UserServiceImpl.java`
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/controller/UserController.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/dto/UserRegisterRequest.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/vo/UserVO.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/service/UserService.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/service/impl/UserServiceImpl.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/controller/UserController.java`
 
 - [ ] **Step 11.1：DTO `UserRegisterRequest.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.dto;
+package com.leo.enterpriseinertraining.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -1230,7 +1234,7 @@ public class UserRegisterRequest implements Serializable {
 - [ ] **Step 11.2：VO `UserVO.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.vo;
+package com.leo.enterpriseinertraining.vo;
 
 import lombok.Data;
 
@@ -1248,12 +1252,12 @@ public class UserVO implements Serializable {
 - [ ] **Step 11.3：`UserService.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.service;
+package com.leo.enterpriseinertraining.service;
 
-import com.leo.enterpriseinertraining.user.dto.UserLoginRequest;
-import com.leo.enterpriseinertraining.user.dto.UserRegisterRequest;
-import com.leo.enterpriseinertraining.user.vo.LoginVO;
-import com.leo.enterpriseinertraining.user.vo.UserVO;
+import com.leo.enterpriseinertraining.dto.UserLoginRequest;
+import com.leo.enterpriseinertraining.dto.UserRegisterRequest;
+import com.leo.enterpriseinertraining.vo.LoginVO;
+import com.leo.enterpriseinertraining.vo.UserVO;
 
 public interface UserService {
     UserVO register(UserRegisterRequest req);
@@ -1270,19 +1274,19 @@ public interface UserService {
 - [ ] **Step 11.5：`UserServiceImpl.java`（注册逻辑）**
 
 ```java
-package com.leo.enterpriseinertraining.user.service.impl;
+package com.leo.enterpriseinertraining.service.impl;
 
 import com.leo.enterpriseinertraining.exception.BusinessException;
 import com.leo.enterpriseinertraining.exception.ErrorCode;
 import com.leo.enterpriseinertraining.exception.ThrowUtils;
 import com.leo.enterpriseinertraining.security.JwtUtils;
-import com.leo.enterpriseinertraining.user.dto.UserLoginRequest;
-import com.leo.enterpriseinertraining.user.dto.UserRegisterRequest;
-import com.leo.enterpriseinertraining.user.entity.User;
-import com.leo.enterpriseinertraining.user.mapper.UserMapper;
-import com.leo.enterpriseinertraining.user.service.UserService;
-import com.leo.enterpriseinertraining.user.vo.LoginVO;
-import com.leo.enterpriseinertraining.user.vo.UserVO;
+import com.leo.enterpriseinertraining.dto.UserLoginRequest;
+import com.leo.enterpriseinertraining.dto.UserRegisterRequest;
+import com.leo.enterpriseinertraining.entity.User;
+import com.leo.enterpriseinertraining.mapper.UserMapper;
+import com.leo.enterpriseinertraining.service.UserService;
+import com.leo.enterpriseinertraining.vo.LoginVO;
+import com.leo.enterpriseinertraining.vo.UserVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -1290,7 +1294,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.leo.enterpriseinertraining.user.entity.table.UserTableDef.USER;
+import static com.leo.enterpriseinertraining.entity.table.UserTableDef.USER;
 
 @Service
 @RequiredArgsConstructor
@@ -1345,17 +1349,17 @@ public class UserServiceImpl implements UserService {
 - [ ] **Step 11.6：`UserController.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.controller;
+package com.leo.enterpriseinertraining.controller;
 
 import com.leo.enterpriseinertraining.common.BaseResponse;
 import com.leo.enterpriseinertraining.common.ResultUtils;
 import com.leo.enterpriseinertraining.security.LoginUser;
 import com.leo.enterpriseinertraining.security.SecurityUtils;
-import com.leo.enterpriseinertraining.user.dto.UserLoginRequest;
-import com.leo.enterpriseinertraining.user.dto.UserRegisterRequest;
-import com.leo.enterpriseinertraining.user.service.UserService;
-import com.leo.enterpriseinertraining.user.vo.LoginVO;
-import com.leo.enterpriseinertraining.user.vo.UserVO;
+import com.leo.enterpriseinertraining.dto.UserLoginRequest;
+import com.leo.enterpriseinertraining.dto.UserRegisterRequest;
+import com.leo.enterpriseinertraining.service.UserService;
+import com.leo.enterpriseinertraining.vo.LoginVO;
+import com.leo.enterpriseinertraining.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -1402,7 +1406,7 @@ Expected：BUILD SUCCESS（前提：Task 12 的 DTO/VO 已建）。
 - [ ] **Step 11.8：提交**
 
 ```bash
-git add src/main/java/com/leo/enterpriseinertraining/user/
+git add src/main/java/com/leo/enterpriseinertraining/{dto,vo,service,controller}/
 git commit -m "feat(user): register/login/me API + UserService impl with BCrypt + JWT"
 ```
 
@@ -1411,13 +1415,13 @@ git commit -m "feat(user): register/login/me API + UserService impl with BCrypt 
 ## Task 12：登录 DTO/VO
 
 **Files:**
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/dto/UserLoginRequest.java`
-- Create: `src/main/java/com/leo/enterpriseinertraining/user/vo/LoginVO.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/dto/UserLoginRequest.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/vo/LoginVO.java`
 
 - [ ] **Step 12.1：`UserLoginRequest.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.dto;
+package com.leo.enterpriseinertraining.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -1437,9 +1441,9 @@ public class UserLoginRequest implements Serializable {
 - [ ] **Step 12.2：`LoginVO.java`**
 
 ```java
-package com.leo.enterpriseinertraining.user.vo;
+package com.leo.enterpriseinertraining.vo;
 
-import com.leo.enterpriseinertraining.user.vo.UserVO;
+import com.leo.enterpriseinertraining.vo.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -1462,13 +1466,13 @@ public class LoginVO implements Serializable {
 ## Task 13：健康检查 + Knife4j 验证 + 启动
 
 **Files:**
-- Create: `src/main/java/com/leo/enterpriseinertraining/health/HealthController.java`
+- Create: `src/main/java/com/leo/enterpriseinertraining/controller/HealthController.java`
 - Create: `src/main/java/com/leo/enterpriseinertraining/config/Knife4jConfig.java`
 
 - [ ] **Step 13.1：`HealthController.java`**
 
 ```java
-package com.leo.enterpriseinertraining.health;
+package com.leo.enterpriseinertraining.controller;
 
 import com.leo.enterpriseinertraining.common.BaseResponse;
 import com.leo.enterpriseinertraining.common.ResultUtils;
@@ -1538,7 +1542,7 @@ Expected：BUILD SUCCESS。
 - [ ] **Step 13.4：提交**
 
 ```bash
-git add src/main/java/com/leo/enterpriseinertraining/health/ src/main/java/com/leo/enterpriseinertraining/config/Knife4jConfig.java
+git add src/main/java/com/leo/enterpriseinertraining/controller/ src/main/java/com/leo/enterpriseinertraining/config/Knife4jConfig.java
 git commit -m "feat: health probe + Knife4j OpenAPI with Bearer auth"
 ```
 
