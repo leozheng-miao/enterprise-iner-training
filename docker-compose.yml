@@ -59,7 +59,7 @@ services:
       POSTGRES_PASSWORD: irppw
       POSTGRES_DB: irp_vec
     ports:
-      - "5433:5432"
+      - "5434:5432"           # 宿主 5434（5432 与 5433 都被宿主进程占用）
     volumes:
       - irp-pg-data:/var/lib/postgresql/data
 

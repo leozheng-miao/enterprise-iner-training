@@ -193,10 +193,10 @@ enterprise-iner-training/
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Spring AI（阶段 2 才用，先放 BOM 之外的 starter 占位） -->
+        <!-- Spring AI（阶段 2 才用，1.0.0 GA 命名为 spring-ai-starter-model-openai） -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
 
         <!-- 工具 -->
@@ -286,7 +286,7 @@ services:
       MYSQL_PASSWORD: irppw
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - "3307:3306"          # 宿主 3307（本地已占用 3306）
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -298,7 +298,7 @@ services:
     container_name: irp-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"          # 宿主 6380（本地已有 redis-server 在 6379）
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - irp-redis-data:/data
@@ -308,7 +308,7 @@ services:
     container_name: irp-rmq-namesrv
     restart: unless-stopped
     ports:
-      - "9876:9876"
+      - "9877:9876"          # 宿主 9877（9876 被其它容器占用）
     command: sh mqnamesrv
 
   rocketmq-broker:
@@ -321,7 +321,7 @@ services:
       - "10911:10911"
       - "10909:10909"
     environment:
-      - NAMESRV_ADDR=rocketmq-namesrv:9876
+      - NAMESRV_ADDR=rocketmq-namesrv:9876   # 容器内通信，不动
     command: sh mqbroker -c /home/rocketmq/rocketmq-5.3.0/conf/broker.conf
     volumes:
       - ./docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.3.0/conf/broker.conf
@@ -335,7 +335,7 @@ services:
       POSTGRES_PASSWORD: irppw
       POSTGRES_DB: irp_vec
     ports:
-      - "5432:5432"
+      - "5434:5432"          # 宿主 5434（5432 + 5433 都被宿主进程占用）
     volumes:
       - irp-pg-data:/var/lib/postgresql/data
 
@@ -348,7 +348,7 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"
+      - "9201:9200"          # 宿主 9201（9200 被其它容器占用）
     volumes:
       - irp-es-data:/usr/share/elasticsearch/data
 
@@ -382,11 +382,11 @@ Run：`docker compose up -d`
 然后：`docker compose ps`
 Expected：6 个容器全部 `Up` 状态。
 
-逐个连通性验证：
+逐个连通性验证（注意：从容器内部访问用容器内端口，从宿主访问用映射后端口）：
 ```bash
 docker exec irp-mysql mysql -uirp -pirppw -e "SELECT 1;"
 docker exec irp-redis redis-cli ping              # 应输出 PONG
-curl -s http://localhost:9200                     # 应返回 ES 集群 JSON
+curl -s http://localhost:9201                     # 走宿主映射端口，应返回 ES 集群 JSON
 docker exec irp-pgvector psql -U irp -d irp_vec -c "SELECT 1;"
 docker exec irp-rmq-namesrv sh -c "ls /home/rocketmq"
 ```
@@ -480,14 +480,14 @@ app:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/irp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3307/irp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
     username: irp
     password: irppw
 
   data:
     redis:
       host: localhost
-      port: 6379
+      port: 6380
       timeout: 3s
       lettuce:
         pool:
@@ -496,7 +496,7 @@ spring:
           min-idle: 1
 
 rocketmq:
-  name-server: 127.0.0.1:9876
+  name-server: 127.0.0.1:9877
   producer:
     group: irp-producer-group
     send-message-timeout: 5000
@@ -543,7 +543,13 @@ CREATE TABLE IF NOT EXISTS `user` (
 
 - [ ] **Step 4.2：手动执行**
 
-Run：`docker exec -i irp-mysql mysql -uirp -pirppw irp < src/main/resources/db/schema.sql`
+Run（从宿主使用映射端口；或者用 docker exec 进容器执行）：
+```bash
+# 选项 A：从宿主连
+mysql -h 127.0.0.1 -P 3307 -uirp -pirppw irp < src/main/resources/db/schema.sql
+# 选项 B：通过 docker exec
+docker exec -i irp-mysql mysql -uirp -pirppw irp < src/main/resources/db/schema.sql
+```
 
 验证：
 ```bash
