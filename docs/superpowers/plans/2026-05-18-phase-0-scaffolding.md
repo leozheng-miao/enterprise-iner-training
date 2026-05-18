@@ -143,6 +143,12 @@ enterprise-iner-training/
         </dependency>
         <dependency>
             <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-processor</artifactId>
+            <version>${mybatis-flex.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mybatis-flex</groupId>
             <artifactId>mybatis-flex-codegen</artifactId>
             <version>${mybatis-flex.version}</version>
             <scope>test</scope>
