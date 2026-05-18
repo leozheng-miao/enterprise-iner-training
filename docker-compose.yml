@@ -1,0 +1,83 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: irp-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: irp
+      MYSQL_USER: irp
+      MYSQL_PASSWORD: irppw
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - irp-mysql-data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: irp-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - irp-redis-data:/data
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.0
+    container_name: irp-rmq-namesrv
+    restart: unless-stopped
+    ports:
+      - "9877:9876"
+    command: sh mqnamesrv
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.0
+    container_name: irp-rmq-broker
+    restart: unless-stopped
+    depends_on:
+      - rocketmq-namesrv
+    ports:
+      - "10911:10911"
+      - "10909:10909"
+    environment:
+      - NAMESRV_ADDR=rocketmq-namesrv:9876
+    command: sh mqbroker -c /home/rocketmq/rocketmq-5.3.0/conf/broker.conf
+    volumes:
+      - ./docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.3.0/conf/broker.conf
+
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: irp-pgvector
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: irp
+      POSTGRES_PASSWORD: irppw
+      POSTGRES_DB: irp_vec
+    ports:
+      - "5433:5432"
+    volumes:
+      - irp-pg-data:/var/lib/postgresql/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: irp-es
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9201:9200"
+    volumes:
+      - irp-es-data:/usr/share/elasticsearch/data
+
+volumes:
+  irp-mysql-data:
+  irp-redis-data:
+  irp-pg-data:
+  irp-es-data:
