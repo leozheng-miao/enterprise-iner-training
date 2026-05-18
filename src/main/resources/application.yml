@@ -1,1 +1,58 @@
-spring.application.name=enterprise-iner-training
+spring:
+  application:
+    name: enterprise-iner-training
+  profiles:
+    active: dev
+  threads:
+    virtual:
+      enabled: true
+  sql:
+    init:
+      mode: never
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      max: 200
+
+# Knife4j 文档
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: default
+      paths-to-match: '/**'
+      packages-to-scan: com.leo.enterpriseinertraining
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# MyBatis-Flex
+mybatis-flex:
+  global-config:
+    print-banner: false
+    logic-delete-column: is_deleted
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    root: INFO
+    com.leo.enterpriseinertraining: DEBUG
+    org.springframework.security: INFO
+
+# 自定义 JWT 配置（被 JwtProperties 绑定）
+app:
+  jwt:
+    secret: "change-me-please-use-at-least-32-bytes-secret-key-for-hs256"
+    expire-millis: 86400000          # 24h
+    header: Authorization
+    prefix: "Bearer "

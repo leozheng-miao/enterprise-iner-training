@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/irp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
+    username: irp
+    password: irppw
+
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 1
+
+rocketmq:
+  name-server: 127.0.0.1:9877
+  producer:
+    group: irp-producer-group
+    send-message-timeout: 5000
