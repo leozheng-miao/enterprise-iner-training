@@ -42,7 +42,8 @@ enterprise-iner-training/
 │   │   ├── SecurityConfig.java                         ← 新增
 │   │   └── SecurityUtils.java                          ← 新增
 │   ├── entity/
-│   │   └── User.java                                   ← 新增
+│   │   ├── BaseEntity.java                             ← 新增（公共字段基类）
+│   │   └── User.java                                   ← 新增（extends BaseEntity）
 │   ├── mapper/                                          ← @MapperScan 唯一目标
 │   │   └── UserMapper.java                             ← 新增
 │   ├── dto/
@@ -687,7 +688,9 @@ git commit -m "feat(error): add user/jwt error codes and security/validation exc
 - Create: `src/main/java/com/leo/enterpriseinertraining/mapper/UserMapper.java`
 - Modify: `src/main/java/com/leo/enterpriseinertraining/EnterpriseInerTrainingApplication.java`
 
-- [ ] **Step 6.1：创建 `User.java`**
+- [ ] **Step 6.1a：抽取 `BaseEntity.java`（所有 entity 复用）**
+
+`src/main/java/com/leo/enterpriseinertraining/entity/BaseEntity.java`：
 
 ```java
 package com.leo.enterpriseinertraining.entity;
@@ -695,28 +698,50 @@ package com.leo.enterpriseinertraining.entity;
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
-import com.mybatisflex.annotation.Table;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-@Table("user")
-public class User implements Serializable {
+public class BaseEntity implements Serializable {
 
     @Id(keyType = KeyType.Auto)
     private Long id;
+
+    @Column(value = "create_time", onInsertValue = "now()")
+    private LocalDateTime createTime;
+
+    @Column(value = "update_time", onInsertValue = "now()", onUpdateValue = "now()")
+    private LocalDateTime updateTime;
+
+    @Column(value = "is_deleted", isLogicDelete = true)
+    private Integer isDeleted;
+}
+```
+
+`@Column(onInsertValue="now()")` 让 MyBatis-Flex 在 INSERT SQL 中写入 `now()` 函数，DB 端计算 —— Java 侧无需手动 set，避免时钟漂移。
+
+- [ ] **Step 6.1b：创建 `User.java`（继承 BaseEntity，只声明业务字段）**
+
+```java
+package com.leo.enterpriseinertraining.entity;
+
+import com.mybatisflex.annotation.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Table("user")
+public class User extends BaseEntity {
+
     private String username;
     private String passwordHash;
     private String nickname;
     private Long tenantId;
     private String role;
     private Integer status;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
-    @Column(isLogicDelete = true)
-    private Integer isDeleted;
 }
 ```
 
