@@ -398,6 +398,8 @@ git add docker-compose.yml docker/
 git commit -m "feat(infra): docker-compose for mysql/redis/rocketmq/pgvector/es"
 ```
 
+> **阶段 3 验证项：** `broker.conf` 中 `brokerIP1=127.0.0.1` 适用于"客户端跑宿主、broker 端口未偏移"的场景（本项目即此场景）。阶段 3 真正启用 RocketMQ 生产消费时，确认 producer/consumer 能正常拿到 broker 地址；若失败，改为 `brokerIP1=host.docker.internal` 或暴露容器实际 IP。
+
 ---
 
 ## Task 3：application.yml 配置文件迁移
