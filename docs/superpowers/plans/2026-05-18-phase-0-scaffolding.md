@@ -1566,7 +1566,7 @@ public class MybatisFlexCodegen {
 
     public static void main(String[] args) {
         HikariDataSource ds = new HikariDataSource();
-        ds.setJdbcUrl("jdbc:mysql://localhost:3306/irp?serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true");
+        ds.setJdbcUrl("jdbc:mysql://localhost:3307/irp?serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true");
         ds.setUsername("irp");
         ds.setPassword("irppw");
 
