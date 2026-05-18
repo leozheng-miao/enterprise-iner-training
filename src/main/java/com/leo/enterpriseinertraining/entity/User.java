@@ -1,4 +1,4 @@
-package com.leo.enterpriseinertraining.user.entity;
+package com.leo.enterpriseinertraining.entity;
 
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;

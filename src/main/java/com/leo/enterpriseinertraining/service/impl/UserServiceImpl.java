@@ -1,16 +1,16 @@
-package com.leo.enterpriseinertraining.user.service.impl;
+package com.leo.enterpriseinertraining.service.impl;
 
 import com.leo.enterpriseinertraining.exception.BusinessException;
 import com.leo.enterpriseinertraining.exception.ErrorCode;
 import com.leo.enterpriseinertraining.exception.ThrowUtils;
 import com.leo.enterpriseinertraining.security.JwtUtils;
-import com.leo.enterpriseinertraining.user.dto.UserLoginRequest;
-import com.leo.enterpriseinertraining.user.dto.UserRegisterRequest;
-import com.leo.enterpriseinertraining.user.entity.User;
-import com.leo.enterpriseinertraining.user.mapper.UserMapper;
-import com.leo.enterpriseinertraining.user.service.UserService;
-import com.leo.enterpriseinertraining.user.vo.LoginVO;
-import com.leo.enterpriseinertraining.user.vo.UserVO;
+import com.leo.enterpriseinertraining.dto.UserLoginRequest;
+import com.leo.enterpriseinertraining.dto.UserRegisterRequest;
+import com.leo.enterpriseinertraining.entity.User;
+import com.leo.enterpriseinertraining.mapper.UserMapper;
+import com.leo.enterpriseinertraining.service.UserService;
+import com.leo.enterpriseinertraining.vo.LoginVO;
+import com.leo.enterpriseinertraining.vo.UserVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -18,7 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.leo.enterpriseinertraining.user.entity.table.UserTableDef.USER;
+import static com.leo.enterpriseinertraining.entity.table.UserTableDef.USER;
 
 @Service
 @RequiredArgsConstructor

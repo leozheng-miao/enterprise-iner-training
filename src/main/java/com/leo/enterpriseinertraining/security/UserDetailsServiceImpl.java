@@ -1,7 +1,7 @@
 package com.leo.enterpriseinertraining.security;
 
-import com.leo.enterpriseinertraining.user.entity.User;
-import com.leo.enterpriseinertraining.user.mapper.UserMapper;
+import com.leo.enterpriseinertraining.entity.User;
+import com.leo.enterpriseinertraining.mapper.UserMapper;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import static com.leo.enterpriseinertraining.user.entity.table.UserTableDef.USER;
+import static com.leo.enterpriseinertraining.entity.table.UserTableDef.USER;
 
 @Service
 @RequiredArgsConstructor

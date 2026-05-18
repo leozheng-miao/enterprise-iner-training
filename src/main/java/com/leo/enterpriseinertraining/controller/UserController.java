@@ -1,14 +1,14 @@
-package com.leo.enterpriseinertraining.user.controller;
+package com.leo.enterpriseinertraining.controller;
 
 import com.leo.enterpriseinertraining.common.BaseResponse;
 import com.leo.enterpriseinertraining.common.ResultUtils;
 import com.leo.enterpriseinertraining.security.LoginUser;
 import com.leo.enterpriseinertraining.security.SecurityUtils;
-import com.leo.enterpriseinertraining.user.dto.UserLoginRequest;
-import com.leo.enterpriseinertraining.user.dto.UserRegisterRequest;
-import com.leo.enterpriseinertraining.user.service.UserService;
-import com.leo.enterpriseinertraining.user.vo.LoginVO;
-import com.leo.enterpriseinertraining.user.vo.UserVO;
+import com.leo.enterpriseinertraining.dto.UserLoginRequest;
+import com.leo.enterpriseinertraining.dto.UserRegisterRequest;
+import com.leo.enterpriseinertraining.service.UserService;
+import com.leo.enterpriseinertraining.vo.LoginVO;
+import com.leo.enterpriseinertraining.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

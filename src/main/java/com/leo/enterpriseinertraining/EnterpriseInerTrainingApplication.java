@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.leo.enterpriseinertraining.**.mapper")
+@MapperScan("com.leo.enterpriseinertraining.mapper")
 public class EnterpriseInerTrainingApplication {
 
     public static void main(String[] args) {

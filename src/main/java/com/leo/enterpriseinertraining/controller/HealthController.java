@@ -1,4 +1,4 @@
-package com.leo.enterpriseinertraining.health;
+package com.leo.enterpriseinertraining.controller;
 
 import com.leo.enterpriseinertraining.common.BaseResponse;
 import com.leo.enterpriseinertraining.common.ResultUtils;

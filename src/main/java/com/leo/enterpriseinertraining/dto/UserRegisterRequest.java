@@ -1,4 +1,4 @@
-package com.leo.enterpriseinertraining.user.dto;
+package com.leo.enterpriseinertraining.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

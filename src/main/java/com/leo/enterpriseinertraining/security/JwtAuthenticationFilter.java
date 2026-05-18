@@ -1,7 +1,7 @@
 package com.leo.enterpriseinertraining.security;
 
-import com.leo.enterpriseinertraining.user.entity.User;
-import com.leo.enterpriseinertraining.user.mapper.UserMapper;
+import com.leo.enterpriseinertraining.entity.User;
+import com.leo.enterpriseinertraining.mapper.UserMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

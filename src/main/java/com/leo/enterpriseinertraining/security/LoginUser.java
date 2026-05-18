@@ -1,6 +1,6 @@
 package com.leo.enterpriseinertraining.security;
 
-import com.leo.enterpriseinertraining.user.entity.User;
+import com.leo.enterpriseinertraining.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

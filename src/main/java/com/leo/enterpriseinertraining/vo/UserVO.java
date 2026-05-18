@@ -1,4 +1,4 @@
-package com.leo.enterpriseinertraining.user.vo;
+package com.leo.enterpriseinertraining.vo;
 
 import lombok.Data;
 
