@@ -8,6 +8,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 
+/**
+ * PGVector 独立数据源。
+ *
+ * <p>项目同时使用两个数据源：</p>
+ * <ul>
+ *   <li>主 {@code spring.datasource} → MySQL（业务元数据、Trace、Prompt 等），
+ *       由 Spring Boot 自动配置 + MyBatis-Flex 扫描接管。</li>
+ *   <li>{@link #pgVectorDataSource} → PGVector / PostgreSQL（向量库），
+ *       使用 {@code @Qualifier("pgVectorDataSource")} 或
+ *       {@code @Qualifier("pgVectorJdbcTemplate")} 注入，
+ *       不参与 MyBatis-Flex 扫描，只暴露 {@link JdbcTemplate} 给 RAG 模块手写 SQL 用。</li>
+ * </ul>
+ *
+ * <p>HikariCP 关闭由 Spring 容器自动接管（{@link HikariDataSource} 实现 {@link AutoCloseable}）。</p>
+ */
 @Configuration
 public class PgVectorDataSourceConfig {
 
