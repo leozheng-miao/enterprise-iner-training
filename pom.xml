@@ -14,7 +14,7 @@
     <name>enterprise-iner-training</name>
     <description>行业研报多 Agent 协作平台</description>
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <mybatis-flex.version>1.10.6</mybatis-flex.version>
         <jjwt.version>0.12.6</jjwt.version>
         <rocketmq.version>2.3.3</rocketmq.version>
