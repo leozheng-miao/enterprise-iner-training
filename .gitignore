@@ -35,3 +35,6 @@ META-INF/
 
 # 本地环境变量（含 secret，禁入 git）
 .env
+
+# RAG 预置语料（PDF 不入 git）
+src/main/resources/corpus/
