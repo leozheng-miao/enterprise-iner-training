@@ -14,24 +14,28 @@ import java.util.List;
 
 /**
  * 阿里云 DashScope text-embedding-v3（OpenAI 兼容协议）。
- * 1024 维。单次请求最多 25 条；超出自动拆批。
+ * 1024 维。<b>单次请求最多 10 条</b>（DashScope OpenAI 兼容入口限制，实测报错：
+ * "batch size is invalid, it should not be larger than 10"）；超出自动拆批。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class DashScopeEmbeddingClient {
 
+    /** DashScope OpenAI 兼容入口 batch 上限。 */
+    private static final int BATCH_LIMIT = 10;
+
     @Value("${spring.ai.openai.api-key}") String apiKey;
     @Value("${app.dashscope.embedding-model}") String model;
     @Value("${app.dashscope.embedding-url}") String endpoint;
 
-    /** 批量 embed；DashScope v3 单次最多 25 条。 */
+    /** 批量 embed；超过 {@link #BATCH_LIMIT} 条自动拆批。 */
     public List<float[]> embed(List<String> texts) {
         if (texts.isEmpty()) return List.of();
-        if (texts.size() > 25) {
-            List<float[]> all = new java.util.ArrayList<>();
-            for (int i = 0; i < texts.size(); i += 25) {
-                all.addAll(embed(texts.subList(i, Math.min(i + 25, texts.size()))));
+        if (texts.size() > BATCH_LIMIT) {
+            List<float[]> all = new java.util.ArrayList<>(texts.size());
+            for (int i = 0; i < texts.size(); i += BATCH_LIMIT) {
+                all.addAll(embed(texts.subList(i, Math.min(i + BATCH_LIMIT, texts.size()))));
             }
             return all;
         }
