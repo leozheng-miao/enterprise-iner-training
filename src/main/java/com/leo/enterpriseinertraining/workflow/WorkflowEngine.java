@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,15 +37,19 @@ public class WorkflowEngine {
     private final ToolRegistryService toolRegistry;
     private final List<Agent> agents;
 
-    private Map<String, Agent> byRole;
+    private final Map<String, Agent> byRole = new HashMap<>();
+
+    /**
+     * 启动时一次性构建 role → Agent 映射，避免 Virtual Thread 并发首次调用时
+     * 多个线程同时进入懒初始化分支造成 HashMap 数据竞争。
+     */
+    @PostConstruct
+    public void init() {
+        for (Agent a : agents) byRole.put(a.role(), a);
+        log.info("[WorkflowEngine] registered agents: {}", byRole.keySet());
+    }
 
     public WorkflowExecutionResult execute(long taskId, WorkflowDef def, String topic, SseSink sink) {
-        // 懒构建 role → Agent 映射
-        if (byRole == null) {
-            byRole = new HashMap<>();
-            for (Agent a : agents) byRole.put(a.role(), a);
-            log.info("[WorkflowEngine] registered agents: {}", byRole.keySet());
-        }
 
         String lastMarkdown = null;
         List<Citation> allCitations = new ArrayList<>();
