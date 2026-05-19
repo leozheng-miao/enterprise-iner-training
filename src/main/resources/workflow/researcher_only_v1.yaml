@@ -1,0 +1,8 @@
+name: researcher_only_v1
+version: 1
+nodes:
+  - id: research
+    agent: Researcher
+    prompt: researcher_prompt@v1
+    tools:
+      - hybrid_search
