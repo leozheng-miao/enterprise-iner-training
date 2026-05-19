@@ -4,6 +4,7 @@ import com.leo.enterpriseinertraining.common.BaseResponse;
 import com.leo.enterpriseinertraining.common.ResultUtils;
 import com.leo.enterpriseinertraining.dto.RagIngestRequest;
 import com.leo.enterpriseinertraining.dto.RagSearchRequest;
+import com.leo.enterpriseinertraining.service.RagEvalService;
 import com.leo.enterpriseinertraining.service.RagIngestService;
 import com.leo.enterpriseinertraining.service.RagSearchService;
 import com.leo.enterpriseinertraining.vo.IngestSummaryVO;
@@ -23,6 +24,7 @@ public class RagController {
 
     private final RagIngestService ingestService;
     private final RagSearchService searchService;
+    private final RagEvalService evalService;
 
     @PostMapping("/ingest")
     @Operation(summary = "离线 ingest 一批 PDF（path 是 corpus/ 下的相对路径或 glob）")
@@ -38,5 +40,11 @@ public class RagController {
                 "query", req.getQuery(),
                 "tookMs", r.tookMs(),
                 "hits", r.hits()));
+    }
+
+    @PostMapping("/eval/synthesize")
+    @Operation(summary = "合成评估 query（每个 chunk 生 1 个，需 ADMIN 自行筛选）")
+    public BaseResponse<Integer> synthesize(@RequestParam(defaultValue = "100") int sampleSize) {
+        return ResultUtils.success(evalService.synthesizeAndStore(sampleSize));
     }
 }
