@@ -2,8 +2,6 @@ package com.leo.enterpriseinertraining.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -36,14 +34,27 @@ import javax.sql.DataSource;
 public class PgVectorDataSourceConfig {
 
     /**
-     * 主 MySQL 数据源。绑定 {@code spring.datasource.*} 配置，
+     * 主 MySQL 数据源。手动 setter 注入 {@code spring.datasource.*} 字段，
      * 显式声明 {@link Primary @Primary} 让 MyBatis-Flex / Spring 默认注入用它。
+     *
+     * <p>不使用 {@code DataSourceBuilder + @ConfigurationProperties}：那种方式
+     * 配合 {@code HikariDataSource} 时期望字段名 {@code jdbcUrl}，
+     * 而项目 yml 用 {@code url}，会导致 "Can not get jdbcUrl" 启动失败。</p>
      */
     @Bean
     @Primary
-    @ConfigurationProperties("spring.datasource")
-    public DataSource dataSource() {
-        return DataSourceBuilder.create().type(HikariDataSource.class).build();
+    public DataSource dataSource(
+            @Value("${spring.datasource.url}") String url,
+            @Value("${spring.datasource.username}") String username,
+            @Value("${spring.datasource.password}") String password,
+            @Value("${spring.datasource.driver-class-name}") String driverClass) {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl(url);
+        ds.setUsername(username);
+        ds.setPassword(password);
+        ds.setDriverClassName(driverClass);
+        ds.setPoolName("mysql-pool");
+        return ds;
     }
 
     @Bean(name = "pgVectorDataSource")
