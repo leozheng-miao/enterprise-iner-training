@@ -1,6 +1,9 @@
 spring:
   application:
     name: enterprise-iner-training
+  ai:
+    openai:
+      api-key: ${DASHSCOPE_API_KEY:}
   profiles:
     active: dev
   threads:
