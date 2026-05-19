@@ -29,7 +29,7 @@ public class HybridRetriever {
             int pageStart, int pageEnd, String content, double fusedScore) {}
 
     public List<Candidate> retrieve(String query, int topK) {
-        var exec = java.util.concurrent.ForkJoinPool.commonPool();
+        var exec = Executors.newVirtualThreadPerTaskExecutor();
         CompletableFuture<List<VectorStore.VectorHit>> fVec =
                 CompletableFuture.supplyAsync(() ->
                         vectorStore.search(embedding.embedOne(query), CANDIDATES_PER_SIDE), exec);
