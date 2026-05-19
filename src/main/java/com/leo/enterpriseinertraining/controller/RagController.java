@@ -2,6 +2,7 @@ package com.leo.enterpriseinertraining.controller;
 
 import com.leo.enterpriseinertraining.common.BaseResponse;
 import com.leo.enterpriseinertraining.common.ResultUtils;
+import com.leo.enterpriseinertraining.vo.EvalSummaryVO;
 import com.leo.enterpriseinertraining.dto.RagIngestRequest;
 import com.leo.enterpriseinertraining.dto.RagSearchRequest;
 import com.leo.enterpriseinertraining.service.RagEvalService;
@@ -46,5 +47,17 @@ public class RagController {
     @Operation(summary = "合成评估 query（每个 chunk 生 1 个，需 ADMIN 自行筛选）")
     public BaseResponse<Integer> synthesize(@RequestParam(defaultValue = "100") int sampleSize) {
         return ResultUtils.success(evalService.synthesizeAndStore(sampleSize));
+    }
+
+    @PostMapping("/eval/run")
+    @Operation(summary = "跑完整评估（with vs without rerank）")
+    public BaseResponse<EvalSummaryVO> evalRun() {
+        return ResultUtils.success(evalService.run());
+    }
+
+    @GetMapping("/eval/latest")
+    @Operation(summary = "最近一次评估结果")
+    public BaseResponse<EvalSummaryVO> evalLatest() {
+        return ResultUtils.success(evalService.latest());
     }
 }
