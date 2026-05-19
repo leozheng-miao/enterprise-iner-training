@@ -31,3 +31,18 @@ rocketmq:
   producer:
     group: irp-producer-group
     send-message-timeout: 5000
+
+# RAG 子系统配置
+rag:
+  pgvector:
+    url: jdbc:postgresql://localhost:5434/irp_vec
+    username: irp
+    password: irppw
+    schema: public
+    table: knowledge_chunk_vec
+    dimensions: 1024
+  elasticsearch:
+    host: localhost
+    port: 9201
+    scheme: http
+    index: knowledge_chunk_bm25

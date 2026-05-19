@@ -3,8 +3,9 @@ package com.leo.enterpriseinertraining;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = { PgVectorStoreAutoConfiguration.class })
 @MapperScan("com.leo.enterpriseinertraining.mapper")
 public class EnterpriseInerTrainingApplication {
 

@@ -56,7 +56,13 @@ app:
     #   export JWT_SECRET=$(openssl rand -base64 48)
     # IDE Run Configuration → Environment variables 中加一条同名条目即可。
     # 未设置时 Spring 会以字面量 `${JWT_SECRET}` 注入，导致 Keys.hmacShaKeyFor 因长度不足抛错（fail-fast）。
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:}
     expire-millis: 86400000          # 24h
     header: Authorization
     prefix: "Bearer "
+  dashscope:
+    embedding-model: text-embedding-v3
+    embedding-url: https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings
+    rerank-model: gte-rerank-v2
+    rerank-url: https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank
+    chat-model: qwen-max
