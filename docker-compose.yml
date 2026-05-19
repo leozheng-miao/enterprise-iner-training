@@ -64,7 +64,8 @@ services:
       - irp-pg-data:/var/lib/postgresql/data
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    build: ./docker/es
+    image: irp-es:8.13.0-ik
     container_name: irp-es
     restart: unless-stopped
     environment:
