@@ -1,6 +1,7 @@
 package com.leo.enterpriseinertraining.config;
 
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,7 +75,10 @@ public class PgVectorDataSourceConfig {
     }
 
     @Bean(name = "pgVectorJdbcTemplate")
-    public JdbcTemplate pgVectorJdbcTemplate(DataSource pgVectorDataSource) {
-        return new JdbcTemplate(pgVectorDataSource);
+    public JdbcTemplate pgVectorJdbcTemplate(
+            @Qualifier("pgVectorDataSource") DataSource ds) {
+        // 必须 @Qualifier：主 dataSource 已标 @Primary，不显式 qualifier 会拿到 MySQL，
+        // 导致 PGVector init SQL 跑到 MySQL 报 "table not found"。
+        return new JdbcTemplate(ds);
     }
 }
