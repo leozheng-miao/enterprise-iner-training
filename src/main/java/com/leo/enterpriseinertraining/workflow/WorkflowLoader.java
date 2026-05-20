@@ -21,6 +21,12 @@ public class WorkflowLoader {
         return cache.computeIfAbsent(name, this::readYaml);
     }
 
+    /** 清空缓存，下次 load 会重新读 YAML（admin 接口用）。 */
+    public synchronized void reload() {
+        cache.clear();
+        log.info("[WorkflowLoader] cache cleared (reload)");
+    }
+
     private WorkflowDef readYaml(String name) {
         String path = "workflow/" + name + ".yaml";
         try (InputStream in = new ClassPathResource(path).getInputStream()) {
