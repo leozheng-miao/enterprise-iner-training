@@ -67,7 +67,7 @@ public class WorkflowEngine {
             List<AgentTool> tools = toolRegistry.byNames(
                     node.getTools() == null ? List.of() : node.getTools());
 
-            AgentInvocation invocation = new AgentInvocation(
+            AgentInvocation invocation = AgentInvocation.of(
                     taskId, node.getId(), topic, tools, node.getPrompt());
 
             AgentResult result = agent.execute(invocation, sink);
