@@ -55,6 +55,17 @@ public class SseSink {
         complete();
     }
 
+    public synchronized void phaseChanged(String phase, int progress) {
+        send("phase_changed", Map.of("phase", phase, "progress", progress));
+    }
+
+    public synchronized void sectionDone(int order, String title, String preview) {
+        send("section_done", Map.of(
+                "order", order,
+                "title", title == null ? "" : title,
+                "preview", preview == null ? "" : preview));
+    }
+
     public synchronized void ping() {
         send("ping", Map.of("ts", System.currentTimeMillis()));
     }
