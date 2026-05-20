@@ -1,5 +1,6 @@
 package com.leo.enterpriseinertraining.agent.role;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leo.enterpriseinertraining.agent.core.*;
 import com.leo.enterpriseinertraining.agent.prompt.PromptLoader;
@@ -21,16 +22,11 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Researcher Agent：Spring AI 1.0 Function Calling + 工具调用 Trace。
+ * Researcher Agent（阶段 3 版）：处理单个 subtopic（来自 fanout），调 hybrid_search 工具，
+ * 输出 JSON {content, citations}。
  *
- * <p>实现思路：</p>
- * <ol>
- *   <li>把 {@link AgentTool} 列表通过 {@link FunctionToolCallback} 桥接成 Spring AI 工具</li>
- *   <li>桥接 lambda 内部包了一层：执行前推 SSE event:tool、执行后写 workflow_node_run TOOL_CALL 行</li>
- *   <li>{@code ChatClient.prompt().toolCallbacks(...).call()} 同步等到最终回答</li>
- *   <li>结束后写 workflow_node_run LLM_CALL 行，提取 markdown + 引用</li>
- *   <li>把最终 markdown 切片当作 token 事件推给 SSE（简化版；阶段 3 改用 .stream() 真流式）</li>
- * </ol>
+ * <p>与阶段 2 区别：阶段 2 输入 inv.topic() 写整段 markdown；阶段 3 输入 inv.fanoutPayload()
+ * （单个 subtopic）输出结构化 JSON 给 Analyst 聚合用。</p>
  */
 @Slf4j
 @Component
@@ -41,74 +37,65 @@ public class ResearcherAgent implements Agent {
     private final PromptLoader promptLoader;
     private final WorkflowNodeRunRecorder recorder;
     private final ToolInvocationTracer tracer;
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om;
 
     @Value("${app.dashscope.chat-model:qwen-plus}")
     private String defaultModel;
 
-    @Override
-    public String role() {
-        return "Researcher";
-    }
+    @Override public String role() { return "Researcher"; }
 
     @Override
     public AgentResult execute(AgentInvocation inv, SseSink sink) {
         long t0 = System.currentTimeMillis();
         try {
             String systemPrompt = promptLoader.load(inv.promptRef());
+            // 阶段 3：fanoutPayload 是 subtopic 文本；阶段 2 用 topic 字段（向后兼容）
+            String userInput = inv.fanoutPayload() != null ? inv.fanoutPayload() : inv.topic();
 
-            // 1) 桥接工具
             List<ToolCallback> callbacks = new ArrayList<>();
             for (AgentTool t : inv.tools()) {
                 callbacks.add(toCallback(t, inv, sink));
             }
 
-            // 2) 调 LLM 同步
             ChatClient client = chatClientBuilder.build();
             long llmStart = System.currentTimeMillis();
             var response = client.prompt()
                     .system(systemPrompt)
-                    .user(inv.topic())
+                    .user("研究子主题：" + userInput)
                     .toolCallbacks(callbacks.toArray(ToolCallback[]::new))
                     .call()
                     .chatResponse();
             long llmLatency = System.currentTimeMillis() - llmStart;
 
-            String content = response.getResult().getOutput().getText();
+            String raw = response.getResult().getOutput().getText();
             int tokensIn = response.getMetadata().getUsage() == null ? 0
                     : response.getMetadata().getUsage().getPromptTokens().intValue();
             int tokensOut = response.getMetadata().getUsage() == null ? 0
                     : response.getMetadata().getUsage().getCompletionTokens().intValue();
 
-            // 3) 写 LLM_CALL trace
             recorder.recordLlmCall(
                     inv.taskId(), inv.nodeId(), role(),
                     inv.promptRef(), defaultModel,
-                    Map.of("topic", inv.topic()),
-                    Map.of("content", content),
-                    tokensIn, tokensOut, (int) llmLatency,
-                    "OK", null);
+                    Map.of("subtopic", userInput, "fanoutIndex", inv.fanoutIndex()),
+                    Map.of("raw", raw),
+                    tokensIn, tokensOut, (int) llmLatency, "OK", null);
 
-            // 4) 切片推 token 事件（简化流式）
-            if (sink != null && !sink.isClosed()) {
-                for (int i = 0; i < content.length(); i += 64) {
-                    sink.token(content.substring(i, Math.min(i + 64, content.length())));
-                }
-            }
+            // 解析输出 JSON：{content, citations}
+            String json = extractJson(raw);
+            JsonNode node = om.readTree(json);
+            String content = node.has("content") ? node.get("content").asText() : raw;
+            List<Citation> citations = parseCitations(node);
 
-            // 5) 引用聚合（阶段 2 简化：让 LLM 在 markdown 末尾自己列；trace 表里的 hits 留给阶段 3 解析）
-            List<Citation> citations = List.of();
-
-            log.info("[Researcher/{}] done in {} ms (LLM {} ms), tokensIn={} tokensOut={}",
-                    inv.taskId(), System.currentTimeMillis() - t0, llmLatency, tokensIn, tokensOut);
-            return AgentResult.ok(content, citations);
-
+            log.info("[Researcher/{}/{}] done in {} ms (LLM {} ms)", inv.taskId(), inv.fanoutIndex(),
+                    System.currentTimeMillis() - t0, llmLatency);
+            // markdown 字段返回完整 json（含 content + citations），上游 Worker 落到 workflow_subtask.result_json
+            return AgentResult.ok(json, citations);
         } catch (Exception e) {
-            log.error("[Researcher/{}] failed", inv.taskId(), e);
+            log.error("[Researcher/{}/{}] failed", inv.taskId(), inv.fanoutIndex(), e);
             recorder.recordLlmCall(
                     inv.taskId(), inv.nodeId(), role(),
                     inv.promptRef(), defaultModel,
-                    Map.of("topic", inv.topic()), null,
+                    Map.of("subtopic", inv.fanoutPayload(), "fanoutIndex", inv.fanoutIndex()), null,
                     0, 0, (int) (System.currentTimeMillis() - t0),
                     "ERROR", e.getMessage());
             return AgentResult.error(e.getMessage());
@@ -120,27 +107,43 @@ public class ResearcherAgent implements Agent {
         Function<Object, Object> wrapped = (Object params) -> {
             long start = System.currentTimeMillis();
             try {
-                if (sink != null) {
-                    String paramsJson = safeJson(params);
-                    sink.tool(t.name(), paramsJson, "invoking...");
-                }
+                if (sink != null) sink.tool(t.name(), safeJson(params), "invoking...");
                 Object result = t.invoke(params);
                 int latency = (int) (System.currentTimeMillis() - start);
-                tracer.recordSuccess(inv.taskId(), inv.nodeId(), role(), t.name(),
-                        params, result, latency);
+                tracer.recordSuccess(inv.taskId(), inv.nodeId(), role(), t.name(), params, result, latency);
                 return result;
             } catch (Exception e) {
                 int latency = (int) (System.currentTimeMillis() - start);
-                tracer.recordError(inv.taskId(), inv.nodeId(), role(), t.name(),
-                        params, e, latency);
+                tracer.recordError(inv.taskId(), inv.nodeId(), role(), t.name(), params, e, latency);
                 throw new RuntimeException("tool '" + t.name() + "' invoke failed", e);
             }
         };
-
         return FunctionToolCallback.builder(t.name(), wrapped)
                 .description(t.description())
                 .inputType((Class) t.paramsType())
                 .build();
+    }
+
+    private String extractJson(String s) {
+        int l = s.indexOf('{'), r = s.lastIndexOf('}');
+        return (l >= 0 && r > l) ? s.substring(l, r + 1) : s;
+    }
+
+    private List<Citation> parseCitations(JsonNode root) {
+        List<Citation> result = new ArrayList<>();
+        JsonNode arr = root.get("citations");
+        if (arr != null && arr.isArray()) {
+            for (JsonNode c : arr) {
+                result.add(new Citation(
+                        c.has("docId") ? c.get("docId").asLong() : null,
+                        c.has("docTitle") ? c.get("docTitle").asText() : null,
+                        c.has("source") ? c.get("source").asText() : null,
+                        c.has("sectionTitle") ? c.get("sectionTitle").asText() : null,
+                        c.has("pageStart") ? c.get("pageStart").asInt() : null,
+                        c.has("pageEnd") ? c.get("pageEnd").asInt() : null));
+            }
+        }
+        return result;
     }
 
     private String safeJson(Object o) {
