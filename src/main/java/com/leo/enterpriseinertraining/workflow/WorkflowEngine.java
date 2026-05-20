@@ -1,102 +1,41 @@
 package com.leo.enterpriseinertraining.workflow;
 
-import com.leo.enterpriseinertraining.agent.core.Agent;
-import com.leo.enterpriseinertraining.agent.core.AgentInvocation;
-import com.leo.enterpriseinertraining.agent.core.AgentResult;
-import com.leo.enterpriseinertraining.agent.core.AgentStatus;
-import com.leo.enterpriseinertraining.agent.core.Citation;
-import com.leo.enterpriseinertraining.agent.tool.AgentTool;
-import com.leo.enterpriseinertraining.agent.tool.ToolRegistryService;
-import com.leo.enterpriseinertraining.stream.SseSink;
+import com.leo.enterpriseinertraining.mq.MqMessage;
+import com.leo.enterpriseinertraining.mq.MqProducerService;
+import com.leo.enterpriseinertraining.mq.MqTopics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Workflow 顺序执行器（阶段 2 雏形）。
+ * Workflow Engine v2（阶段 3）：事件驱动 dispatcher。
  *
- * <p>限制：</p>
- * <ul>
- *   <li>只支持顺序节点（不支持 fanout / join / 回环）</li>
- *   <li>同步执行，不引入 RocketMQ（阶段 3 升级）</li>
- *   <li>节点失败立即抛出，整条 workflow 标记 FAILED</li>
- * </ul>
+ * <p>阶段 2 的同步 execute() 方法已删除。新模型：</p>
+ * <ol>
+ *   <li>{@link #start(long, String)} 仅发 task.created MQ 消息</li>
+ *   <li>后续节点由各自 MQ Consumer 触发，节点间编排已在每个 Consumer 内显式硬编码
+ *       （TaskOrchestratorConsumer → ResearcherWorker → AnalystConsumer → WriterConsumer → CriticConsumer）</li>
+ * </ol>
+ *
+ * <p>本类目前仅做"启动入口"。未来如需通用 dispatchNext，可以扩展为读 YAML.next 决定 topic。
+ * 阶段 3 保持简单：每个 Consumer 自己知道下一步去哪。</p>
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class WorkflowEngine {
 
-    private final ToolRegistryService toolRegistry;
-    private final List<Agent> agents;
+    private final MqProducerService producer;
+    private final WorkflowLoader workflowLoader;
 
-    private final Map<String, Agent> byRole = new HashMap<>();
-
-    /**
-     * 启动时一次性构建 role → Agent 映射，避免 Virtual Thread 并发首次调用时
-     * 多个线程同时进入懒初始化分支造成 HashMap 数据竞争。
-     */
-    @PostConstruct
-    public void init() {
-        for (Agent a : agents) byRole.put(a.role(), a);
-        log.info("[WorkflowEngine] registered agents: {}", byRole.keySet());
-    }
-
-    public WorkflowExecutionResult execute(long taskId, WorkflowDef def, String topic, SseSink sink) {
-
-        String lastMarkdown = null;
-        List<Citation> allCitations = new ArrayList<>();
-
-        for (WorkflowNode node : def.getNodes()) {
-            if (sink != null && !sink.isClosed()) sink.nodeStatus(node.getId(), "RUNNING");
-
-            Agent agent = byRole.get(node.getAgent());
-            if (agent == null) {
-                String msg = "未知 agent: " + node.getAgent();
-                if (sink != null) sink.nodeStatus(node.getId(), "FAILED");
-                return WorkflowExecutionResult.failure(msg);
-            }
-
-            List<AgentTool> tools = toolRegistry.byNames(
-                    node.getTools() == null ? List.of() : node.getTools());
-
-            AgentInvocation invocation = AgentInvocation.of(
-                    taskId, node.getId(), topic, tools, node.getPrompt());
-
-            AgentResult result = agent.execute(invocation, sink);
-
-            if (result.status() == AgentStatus.ERROR) {
-                if (sink != null) sink.nodeStatus(node.getId(), "FAILED");
-                return WorkflowExecutionResult.failure(result.errorMessage());
-            }
-
-            lastMarkdown = result.markdown();
-            if (result.citations() != null) allCitations.addAll(result.citations());
-
-            if (sink != null) sink.nodeStatus(node.getId(), "DONE");
+    /** 启动一个 task：发 task.created MQ，立即返回。 */
+    public void start(long taskId, String workflowName) {
+        // 校验 workflow 存在（提前失败比 MQ Consumer 失败更友好）
+        WorkflowDef def = workflowLoader.load(workflowName);
+        if (def.getNodes() == null || def.getNodes().isEmpty()) {
+            throw new RuntimeException("workflow " + workflowName + " 无节点");
         }
-
-        return WorkflowExecutionResult.success(lastMarkdown, allCitations);
-    }
-
-    public record WorkflowExecutionResult(
-            boolean ok,
-            String markdown,
-            List<Citation> citations,
-            String errorMessage
-    ) {
-        public static WorkflowExecutionResult success(String md, List<Citation> cits) {
-            return new WorkflowExecutionResult(true, md, cits, null);
-        }
-        public static WorkflowExecutionResult failure(String msg) {
-            return new WorkflowExecutionResult(false, null, List.of(), msg);
-        }
+        producer.send(MqTopics.TASK_CREATED, MqMessage.of(taskId, "task.created"));
+        log.info("[WorkflowEngine] task {} started with workflow {}", taskId, workflowName);
     }
 }
