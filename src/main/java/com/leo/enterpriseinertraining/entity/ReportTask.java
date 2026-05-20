@@ -18,6 +18,8 @@ public class ReportTask extends BaseEntity {
     private String topic;
     private String workflowName;
     private String status;
+    private String phase;            // PLANNING/RESEARCHING/ANALYZING/WRITING/CRITICIZING/DONE
+    private Integer progress;        // 0-100
     private String finalMarkdown;
 
     @Column(typeHandler = JacksonTypeHandler.class)
