@@ -1,0 +1,41 @@
+name: multi_agent_v1
+version: 1
+nodes:
+  - id: plan
+    agent: Planner
+    prompt: planner_prompt@v1
+    model: qwen-max
+    next: [research]
+
+  - id: research
+    agent: Researcher
+    prompt: researcher_prompt@v2
+    model: qwen-plus
+    tools:
+      - hybrid_search
+    fanout:
+      from: "${plan.subtopics}"
+    join: all
+    next: [analyze]
+
+  - id: analyze
+    agent: Analyst
+    prompt: analyst_prompt@v1
+    model: qwen-max
+    next: [write]
+
+  - id: write
+    agent: Writer
+    prompt: writer_prompt@v1
+    model: qwen-plus
+    fanout:
+      from: "${analyze.sections}"
+    join: all
+    next: [critic]
+
+  - id: critic
+    agent: Critic
+    prompt: critic_prompt@v1
+    model: qwen-max
+    max_loops: 1
+    on_needs_revision: write
