@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
         name: 'home',
         component: () => import('@/views/HomeView.vue'),
         meta: { requiresAuth: true, title: '首页' }
+      },
+      {
+        path: 'rag',
+        name: 'rag-search',
+        component: () => import('@/views/rag/RagSearchView.vue'),
+        meta: { requiresAuth: true, title: 'RAG 检索' }
       }
     ]
   },
@@ -55,7 +61,6 @@ router.beforeEach((to: RouteLocationNormalized) => {
     return { path: '/' }
   }
 
-  // 更新页面标题
   const title = to.meta.title as string | undefined
   if (title) {
     document.title = `${title} · 行业研报多 Agent 协作平台`

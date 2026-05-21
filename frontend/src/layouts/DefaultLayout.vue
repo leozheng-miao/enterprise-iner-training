@@ -31,7 +31,7 @@ interface MenuItem {
 
 const menus: MenuItem[] = [
   { key: 'home', label: '首页', icon: HomeFilled, path: '/' },
-  { key: 'rag', label: 'RAG 检索', icon: Search, disabled: true },
+  { key: 'rag', label: 'RAG 检索', icon: Search, path: '/rag' },
   { key: 'ingest', label: '知识入库', icon: DataAnalysis, disabled: true },
   { key: 'eval', label: '评估看板', icon: TrendCharts, disabled: true },
   { key: 'report', label: '研究报告', icon: Document, disabled: true },
@@ -41,6 +41,7 @@ const menus: MenuItem[] = [
 
 const activeMenu = computed(() => {
   if (route.path === '/') return 'home'
+  if (route.path.startsWith('/rag')) return 'rag'
   return ''
 })
 
