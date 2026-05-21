@@ -20,6 +20,7 @@ import com.leo.enterpriseinertraining.workflow.WorkflowNode;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.stereotype.Component;
@@ -69,6 +70,13 @@ public class CriticConsumer implements RocketMQListener<String> {
     private void handleCritic(long taskId) throws Exception {
         ReportTask task = taskMapper.selectOneById(taskId);
         if (task == null) return;
+
+        // 幂等守卫：WriterConsumer 多线程下 pending=0 检测有并发双发 critic.task 的概率。
+        // 任务已 DONE 时跳过，避免重复 finalize / 重复推 SSE done。
+        if ("DONE".equals(task.getStatus()) || "FAILED".equals(task.getStatus())) {
+            log.info("[Critic/{}] task already terminal status={}, skip duplicate critic.task", taskId, task.getStatus());
+            return;
+        }
 
         SseSink sink = sinkManager.get(taskId);
         if (sink != null) sink.nodeStatus("critic", "RUNNING");
@@ -196,11 +204,14 @@ public class CriticConsumer implements RocketMQListener<String> {
         }
     }
 
+    @PostConstruct
+    private void initAgentByRole() {
+        agentByRole = new HashMap<>();
+        for (Agent a : agents) agentByRole.put(a.role(), a);
+        log.info("[{}] agentByRole initialized: {}", getClass().getSimpleName(), agentByRole.keySet());
+    }
+
     private Map<String, Agent> agentByRole() {
-        if (agentByRole == null) {
-            agentByRole = new HashMap<>();
-            for (Agent a : agents) agentByRole.put(a.role(), a);
-        }
         return agentByRole;
     }
 }

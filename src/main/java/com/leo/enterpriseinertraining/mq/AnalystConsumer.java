@@ -20,6 +20,7 @@ import com.leo.enterpriseinertraining.workflow.WorkflowNode;
 import com.mybatisflex.core.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.stereotype.Component;
@@ -156,11 +157,14 @@ public class AnalystConsumer implements RocketMQListener<String> {
         sinkManager.remove(task.getId());
     }
 
+    @PostConstruct
+    private void initAgentByRole() {
+        agentByRole = new HashMap<>();
+        for (Agent a : agents) agentByRole.put(a.role(), a);
+        log.info("[{}] agentByRole initialized: {}", getClass().getSimpleName(), agentByRole.keySet());
+    }
+
     private Map<String, Agent> agentByRole() {
-        if (agentByRole == null) {
-            agentByRole = new HashMap<>();
-            for (Agent a : agents) agentByRole.put(a.role(), a);
-        }
         return agentByRole;
     }
 }
