@@ -12,6 +12,8 @@ import java.util.List;
 public class ReportResultVO implements Serializable {
     private Long taskId;
     private String status;
+    private String phase;            // 阶段 3 新增
+    private Integer progress;        // 阶段 3 新增
     private String topic;
     private String finalMarkdown;
     private List<ReportTask.CitationData> citations;
