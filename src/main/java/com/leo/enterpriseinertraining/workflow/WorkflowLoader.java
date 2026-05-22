@@ -8,14 +8,15 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
 public class WorkflowLoader {
 
-    private final Map<String, WorkflowDef> cache = new HashMap<>();
+    // ConcurrentHashMap：5 个 Consumer 线程并发 load workflow，HashMap.computeIfAbsent 非线程安全会抛 CME
+    private final Map<String, WorkflowDef> cache = new ConcurrentHashMap<>();
 
     public WorkflowDef load(String name) {
         return cache.computeIfAbsent(name, this::readYaml);

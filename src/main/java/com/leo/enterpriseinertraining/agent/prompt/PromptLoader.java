@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 从 classpath:prompts/*.txt 读取 prompt 文本，按 "name@version" 索引并缓存。
@@ -19,7 +19,8 @@ import java.util.Map;
 @Component
 public class PromptLoader {
 
-    private final Map<String, String> cache = new HashMap<>();
+    // ConcurrentHashMap：多个 Consumer 线程并发 load 同一 prompt，HashMap.computeIfAbsent 非线程安全会抛 CME
+    private final Map<String, String> cache = new ConcurrentHashMap<>();
 
     public String load(String ref) {
         return cache.computeIfAbsent(ref, this::readFile);
