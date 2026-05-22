@@ -58,6 +58,7 @@ const displayName = computed(
             description="新建任务"
             icon-name="EditPen"
             icon-bg="#dcfce7"
+            to="/report/submit"
           />
           <QuickStartCard
             title="查看 Trace"

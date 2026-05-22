@@ -35,6 +35,18 @@ const routes: RouteRecordRaw[] = [
         name: 'rag-search',
         component: () => import('@/views/rag/RagSearchView.vue'),
         meta: { requiresAuth: true, title: 'RAG 检索' }
+      },
+      {
+        path: 'report/submit',
+        name: 'report-submit',
+        component: () => import('@/views/report/ReportSubmitView.vue'),
+        meta: { requiresAuth: true, title: '发起报告任务' }
+      },
+      {
+        path: 'report/:id(\\d+)',
+        name: 'report-detail',
+        component: () => import('@/views/report/ReportDetailView.vue'),
+        meta: { requiresAuth: true, title: '研究报告详情' }
       }
     ]
   },
