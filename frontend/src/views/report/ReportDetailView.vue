@@ -305,8 +305,11 @@ onBeforeUnmount(() => {
   min-height: 480px;
 }
 
+/* SSE 实时流板块固定高度：不随右侧 Markdown 变长被撑高，
+   内部列表在框内竖向滚动，新事件自动滚到底。 */
 .rd-left {
-  min-height: 0;
+  align-self: start;
+  height: 560px;
 }
 
 .rd-right {
