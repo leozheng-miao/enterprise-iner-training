@@ -168,6 +168,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>1.18.38</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -195,6 +196,30 @@
 
     <build>
         <plugins>
+            <!--
+                显式声明注解处理器路径。
+                JDK 21+ / maven-compiler-plugin 新版不再从 classpath 自动发现处理器，
+                必须在此登记 Lombok 与 MyBatis-Flex APT，否则 `mvn compile` 全量报错
+                （@Data/@Slf4j 不生成、entity/table/*TableDef 不生成）。
+                IDEA 走自身的 Lombok 插件不受影响，但 CLI / CI 构建依赖此处。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                        <path>
+                            <groupId>com.mybatis-flex</groupId>
+                            <artifactId>mybatis-flex-processor</artifactId>
+                            <version>${mybatis-flex.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
