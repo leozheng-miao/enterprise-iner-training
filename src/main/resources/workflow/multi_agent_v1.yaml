@@ -37,5 +37,5 @@ nodes:
     agent: Critic
     prompt: critic_prompt@v1
     model: qwen-max
-    max_loops: 1
-    on_needs_revision: write
+    maxLoops: 1
+    onNeedsRevision: write
