@@ -1,15 +1,15 @@
 name: multi_agent_v1
-version: 1
+version: 2
 nodes:
   - id: plan
     agent: Planner
-    prompt: planner_prompt@v1
+    prompt: planner_prompt@active
     model: qwen-max
     next: [research]
 
   - id: research
     agent: Researcher
-    prompt: researcher_prompt@v2
+    prompt: researcher_prompt@active
     model: qwen-plus
     tools:
       - hybrid_search
@@ -20,13 +20,13 @@ nodes:
 
   - id: analyze
     agent: Analyst
-    prompt: analyst_prompt@v1
+    prompt: analyst_prompt@active
     model: qwen-max
     next: [write]
 
   - id: write
     agent: Writer
-    prompt: writer_prompt@v1
+    prompt: writer_prompt@active
     model: qwen-plus
     fanout:
       from: "${analyze.sections}"
@@ -35,7 +35,7 @@ nodes:
 
   - id: critic
     agent: Critic
-    prompt: critic_prompt@v1
+    prompt: critic_prompt@active
     model: qwen-max
     maxLoops: 1
     onNeedsRevision: write
