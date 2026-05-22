@@ -34,6 +34,26 @@ const durationText = computed(() =>
   )
 )
 
+/** 多 Agent 阶段中文标签（对齐后端 6 个 phase 值）。 */
+const PHASE_LABELS: Record<string, string> = {
+  PLANNING: '规划中',
+  RESEARCHING: '检索中',
+  ANALYZING: '分析中',
+  WRITING: '撰写中',
+  CRITICIZING: '审校中',
+  DONE: '已完成'
+}
+
+const phaseLabel = computed(() => {
+  const p = props.detail.phase
+  if (!p) return '等待中'
+  return PHASE_LABELS[p] ?? p
+})
+
+const showProgress = computed(
+  () => props.detail.status === 'PENDING' || props.detail.status === 'RUNNING'
+)
+
 function goBack() {
   router.back()
 }
@@ -83,6 +103,15 @@ function goBack() {
         <div class="meta-key">耗时</div>
         <div class="meta-val">{{ durationText }}</div>
       </div>
+    </div>
+
+    <div v-if="showProgress" class="rh-progress">
+      <span class="rh-phase">{{ phaseLabel }}</span>
+      <el-progress
+        :percentage="detail.progress ?? 0"
+        :stroke-width="8"
+        class="rh-progress-bar"
+      />
     </div>
   </header>
 </template>
@@ -205,5 +234,25 @@ function goBack() {
   .rh-meta {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* Phase + progress（多 Agent 运行中显示） */
+.rh-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.rh-phase {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.rh-progress-bar {
+  flex: 1;
 }
 </style>

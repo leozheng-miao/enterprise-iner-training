@@ -12,7 +12,7 @@ const submitting = ref(false)
 
 const form = reactive({
   topic: (route.query.topic as string) || '',
-  workflow: 'researcher_only_v1'
+  workflow: 'multi_agent_v1'
 })
 
 const rules: FormRules = {
@@ -23,7 +23,7 @@ const rules: FormRules = {
 }
 
 const workflowOptions = [
-  { label: 'researcher_only_v1（仅检索员工作流）', value: 'researcher_only_v1' }
+  { label: 'multi_agent_v1（Planner→Researcher→Analyst→Writer→Critic 五 Agent 协作）', value: 'multi_agent_v1' }
 ]
 
 async function onSubmit() {
@@ -97,7 +97,7 @@ async function onSubmit() {
         </el-button>
 
         <div class="rs-hint">
-          Ctrl + Enter 提交 · 任务平均耗时 30-180s · 提交后会跳到详情页查看 SSE 实时流
+          Ctrl + Enter 提交 · 五 Agent 协作耗时通常 1-5 分钟 · 提交后会跳到详情页查看 SSE 实时流
         </div>
       </el-form>
     </section>

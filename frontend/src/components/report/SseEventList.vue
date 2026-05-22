@@ -46,6 +46,10 @@ function badgeLabel(e: SseEvent): string {
       return 'tool'
     case 'token':
       return 'token'
+    case 'phase_changed':
+      return 'phase'
+    case 'section_done':
+      return 'section'
     case 'done':
       return 'done'
     case 'error':
@@ -69,6 +73,10 @@ function eventSummary(e: SseEvent): string {
     }
     case 'token':
       return truncate(e.data.delta, 80)
+    case 'phase_changed':
+      return `阶段切换 → ${e.data.phase}（${e.data.progress}%）`
+    case 'section_done':
+      return `章节完成 #${e.data.order}：${e.data.title}`
     case 'done':
       return '报告生成完成'
     case 'error':
@@ -228,6 +236,16 @@ function truncate(s: string, n: number): string {
 .badge-token {
   background: rgba(99, 102, 241, 0.15);
   color: #4338ca;
+}
+
+.badge-phase_changed {
+  background: rgba(6, 182, 212, 0.16);
+  color: #0e7490;
+}
+
+.badge-section_done {
+  background: rgba(139, 92, 246, 0.15);
+  color: #6d28d9;
 }
 
 .badge-done {

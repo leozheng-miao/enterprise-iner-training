@@ -3,6 +3,15 @@ import type { CitationData } from './rag'
 /** 任务生命周期状态（对齐后端 ReportTask.status）。 */
 export type ReportTaskStatus = 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED'
 
+/** 多 Agent 工作流阶段（对齐后端 ReportTask.phase / phaseChanged 事件）。 */
+export type ReportPhase =
+  | 'PLANNING'
+  | 'RESEARCHING'
+  | 'ANALYZING'
+  | 'WRITING'
+  | 'CRITICIZING'
+  | 'DONE'
+
 /** POST /api/report/start 请求。 */
 export interface ReportStartRequest {
   topic: string
@@ -20,6 +29,8 @@ export interface ReportStartResponse {
 export interface ReportDetail {
   taskId: number
   status: ReportTaskStatus
+  phase: ReportPhase | string | null
+  progress: number | null
   topic: string
   finalMarkdown: string | null
   citations: CitationData[]
@@ -79,11 +90,26 @@ export interface PingEvent {
   ts: number
 }
 
+/** 多 Agent 阶段切换事件（后端 SseSink.phaseChanged）。 */
+export interface PhaseChangedEvent {
+  phase: string
+  progress: number
+}
+
+/** 某个章节撰写完成事件（后端 SseSink.sectionDone）。 */
+export interface SectionDoneEvent {
+  order: number
+  title: string
+  preview: string
+}
+
 /** 前端聚合的"已发生事件"结构，用于 SseEventList 渲染。 */
 export type SseEvent =
-  | { type: 'node_status'; ts: number; data: NodeStatusEvent }
-  | { type: 'tool';        ts: number; data: ToolEvent }
-  | { type: 'token';       ts: number; data: TokenEvent }
-  | { type: 'done';        ts: number; data: DoneEvent }
-  | { type: 'error';       ts: number; data: ErrorEvent }
-  | { type: 'ping';        ts: number; data: PingEvent }
+  | { type: 'node_status';   ts: number; data: NodeStatusEvent }
+  | { type: 'tool';          ts: number; data: ToolEvent }
+  | { type: 'token';         ts: number; data: TokenEvent }
+  | { type: 'phase_changed'; ts: number; data: PhaseChangedEvent }
+  | { type: 'section_done';  ts: number; data: SectionDoneEvent }
+  | { type: 'done';          ts: number; data: DoneEvent }
+  | { type: 'error';         ts: number; data: ErrorEvent }
+  | { type: 'ping';          ts: number; data: PingEvent }

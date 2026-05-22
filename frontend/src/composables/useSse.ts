@@ -5,7 +5,9 @@ import type {
   DoneEvent,
   ErrorEvent,
   NodeStatusEvent,
+  PhaseChangedEvent,
   PingEvent,
+  SectionDoneEvent,
   TokenEvent,
   ToolEvent
 } from '@/types/report'
@@ -14,6 +16,8 @@ export interface SseHandlers {
   onNodeStatus?: (data: NodeStatusEvent) => void
   onTool?: (data: ToolEvent) => void
   onToken?: (data: TokenEvent) => void
+  onPhaseChanged?: (data: PhaseChangedEvent) => void
+  onSectionDone?: (data: SectionDoneEvent) => void
   onDone?: (data: DoneEvent) => void
   onError?: (data: ErrorEvent) => void
   onPing?: (data: PingEvent) => void
@@ -30,7 +34,7 @@ export interface SseHandle {
  * 浏览器原生 EventSource 不支持自定义 Header，因此用 fetch-event-source 替代。
  *
  * @param url     拼好的完整 SSE URL（例如 /api/report/123/stream）
- * @param handlers 5 种业务事件 + ping + close 的回调
+ * @param handlers 7 种业务事件（含多 Agent 的 phase_changed / section_done）+ ping + close 的回调
  */
 export function useSse(url: string, handlers: SseHandlers): SseHandle {
   const auth = useAuthStore()
@@ -76,6 +80,12 @@ export function useSse(url: string, handlers: SseHandlers): SseHandle {
           break
         case 'token':
           handlers.onToken?.(data as TokenEvent)
+          break
+        case 'phase_changed':
+          handlers.onPhaseChanged?.(data as PhaseChangedEvent)
+          break
+        case 'section_done':
+          handlers.onSectionDone?.(data as SectionDoneEvent)
           break
         case 'done':
           handlers.onDone?.(data as DoneEvent)

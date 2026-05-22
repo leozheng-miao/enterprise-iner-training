@@ -80,11 +80,23 @@ function openStream() {
       streamingMarkdown.value += data.delta
       if (detail.value) detail.value.status = 'RUNNING'
     },
+    onPhaseChanged: (data) => {
+      events.value.push({ type: 'phase_changed', ts: Date.now(), data })
+      if (detail.value) {
+        detail.value.status = 'RUNNING'
+        detail.value.phase = data.phase
+        detail.value.progress = data.progress
+      }
+    },
+    onSectionDone: (data) =>
+      events.value.push({ type: 'section_done', ts: Date.now(), data }),
     onDone: (data) => {
       events.value.push({ type: 'done', ts: Date.now(), data })
       finalMarkdown.value = data.finalMarkdown
       if (detail.value) {
         detail.value.status = 'DONE'
+        detail.value.phase = 'DONE'
+        detail.value.progress = 100
         detail.value.citations = data.citations
         detail.value.finalMarkdown = data.finalMarkdown
         detail.value.finishedAtEpochMillis = Date.now()
