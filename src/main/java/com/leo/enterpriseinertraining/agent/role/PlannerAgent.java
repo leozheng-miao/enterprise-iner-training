@@ -10,6 +10,7 @@ import com.leo.enterpriseinertraining.stream.SseSink;
 import com.leo.enterpriseinertraining.trace.WorkflowNodeRunRecorder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,14 @@ import java.util.Map;
 public class PlannerAgent implements Agent {
 
     private final ChatClient.Builder chatClientBuilder;
+
+    /** ChatClient.Builder 并发 build() 不安全；启动时 build 一次，之后多线程复用（ChatClient 本身线程安全）。 */
+    private ChatClient chatClient;
+
+    @PostConstruct
+    void initChatClient() {
+        this.chatClient = chatClientBuilder.build();
+    }
     private final PromptLoader promptLoader;
     private final WorkflowNodeRunRecorder recorder;
     private final ObjectMapper om;
@@ -38,7 +47,7 @@ public class PlannerAgent implements Agent {
         long t0 = System.currentTimeMillis();
         try {
             String systemPrompt = promptLoader.load(inv.promptRef());
-            ChatClient client = chatClientBuilder.build();
+            ChatClient client = this.chatClient;
 
             var response = client.prompt()
                     .system(systemPrompt)
