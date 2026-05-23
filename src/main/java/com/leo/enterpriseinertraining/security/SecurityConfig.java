@@ -1,5 +1,6 @@
 package com.leo.enterpriseinertraining.security;
 
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +39,12 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(reg -> reg
+                        // SSE 控制器返回 SseEmitter 后，Tomcat 会在异步完成时做 ASYNC 内部派发，
+                        // 再走一遍过滤器链。Spring Security 6 默认对所有 dispatcher type 鉴权，
+                        // 但异步线程里 SecurityContext 为空 → AuthorizationDeniedException，
+                        // 且 SSE 响应已 commit 无法写 403，控制台抛"response is already committed"。
+                        // ASYNC / ERROR 是同一个已鉴权请求的内部派发，直接放行。
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(WHITELIST).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
