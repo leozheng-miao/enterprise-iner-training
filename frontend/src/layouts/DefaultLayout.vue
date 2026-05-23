@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   HomeFilled,
@@ -24,7 +24,7 @@ const backendHint = import.meta.env.VITE_BACKEND_HINT
 interface MenuItem {
   key: string
   label: string
-  icon: unknown
+  icon: Component
   path?: string
   disabled?: boolean
 }

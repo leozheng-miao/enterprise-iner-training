@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { Download, Refresh } from '@element-plus/icons-vue'
 import hljs from 'highlight.js'
+import 'highlight.js/styles/atom-one-light.css'
 import type { TraceRow } from '@/types/report'
-import { formatEpochMillis } from '@/utils/format'
 
 const props = defineProps<{
   rows: TraceRow[]
@@ -122,11 +122,6 @@ function statusTagType(s: TraceRow['status']): 'success' | 'danger' {
         </template>
       </el-table-column>
       <el-table-column prop="stepSeq" label="stepSeq" width="80" />
-      <el-table-column label="时间" width="180">
-        <template #default="{ row }: { row: TraceRow }">
-          {{ formatEpochMillis(row.latencyMs ? Date.now() : null) /* trace 表没存时间戳，此处空显示 */ }}
-        </template>
-      </el-table-column>
       <el-table-column prop="nodeId" label="nodeId" width="120" />
       <el-table-column prop="agentRole" label="agentRole" width="140" />
       <el-table-column label="stepType" width="120">

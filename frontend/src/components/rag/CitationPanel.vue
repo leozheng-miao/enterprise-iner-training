@@ -86,7 +86,8 @@ const score = computed(() => {
       <header class="cp-section-header">
         <h3 class="cp-section-title">Score 分布</h3>
       </header>
-      <BarChart :data="scoreBuckets" />
+      <BarChart v-if="allHits.length > 0" :data="scoreBuckets" />
+      <div v-else class="cp-empty">检索后显示分桶分布</div>
     </section>
 
     <!-- 检索配置 -->

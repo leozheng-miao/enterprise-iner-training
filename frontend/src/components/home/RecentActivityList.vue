@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import * as ElIcons from '@element-plus/icons-vue'
 import type { ActivityItem } from '@/mock/dashboard'
 
-const props = defineProps<{
+defineProps<{
   activities: ActivityItem[]
 }>()
 
@@ -12,8 +11,6 @@ function iconOf(name: string) {
   const all = ElIcons as any as Record<string, unknown>
   return all[name] ?? ElIcons.Document
 }
-
-const _ = computed(() => props.activities.length)
 </script>
 
 <template>

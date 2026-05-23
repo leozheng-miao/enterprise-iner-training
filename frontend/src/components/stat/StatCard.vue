@@ -14,9 +14,7 @@ const iconComponent = computed(() => {
   return all[props.item.iconName] ?? ElIcons.Document
 })
 
-// 暴露 InfoFilled 给模板（setup 块里 import 的标识符 vue 会自动当作组件使用）
-const _info = InfoFilled
-void _info
+// InfoFilled 直接在模板里用；<script setup> 自动暴露 import 标识符给模板。
 </script>
 
 <template>

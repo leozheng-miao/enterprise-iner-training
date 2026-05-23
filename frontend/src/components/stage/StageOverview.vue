@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Check } from '@element-plus/icons-vue'
 import type { CurrentStageInfo, StageDetail } from '@/mock/dashboard'
 
-const props = defineProps<{
+defineProps<{
   details: StageDetail[]
   current: CurrentStageInfo
   showCurrentCard?: boolean
 }>()
-
-const _ = computed(() => props.details.length)
 </script>
 
 <template>

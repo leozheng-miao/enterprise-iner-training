@@ -29,6 +29,9 @@ async function onSearch() {
     return
   }
   loading.value = true
+  // 先清掉上次的结果，避免旧 hits 与 "检索中…" 并存。
+  lastResp.value = null
+  activeHit.value = null
   try {
     const resp = await ragApi.search({
       query: query.value.trim(),
