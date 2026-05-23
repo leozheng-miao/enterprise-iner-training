@@ -69,6 +69,7 @@ public class ReportController {
     @GetMapping("/{id}/trace")
     @Operation(summary = "查 Trace 时间轴")
     public BaseResponse<List<TraceStepVO>> trace(@PathVariable long id) {
+        reportService.findById(id);    // 复用 findById 的 tenant 校验，防止跨租户读 trace
         List<WorkflowNodeRun> rows = traceQueryService.findByTaskId(id);
         List<TraceStepVO> vos = rows.stream().map(r -> new TraceStepVO(
                 r.getId(), r.getStepSeq(), r.getNodeId(), r.getAgentRole(), r.getStepType(),

@@ -15,6 +15,8 @@ import java.util.List;
 public class ReportTask extends BaseEntity {
 
     private Long userId;
+    /** 租户 ID，逻辑隔离边界；查询时与 SecurityUtils.currentTenantId() 比对。 */
+    private Long tenantId;
     private String topic;
     private String workflowName;
     private String status;

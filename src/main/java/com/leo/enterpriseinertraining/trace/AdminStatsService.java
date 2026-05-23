@@ -3,6 +3,7 @@ package com.leo.enterpriseinertraining.trace;
 import com.leo.enterpriseinertraining.entity.ReportTask;
 import com.leo.enterpriseinertraining.mapper.ReportTaskMapper;
 import com.leo.enterpriseinertraining.mapper.WorkflowNodeRunMapper;
+import com.leo.enterpriseinertraining.security.SecurityUtils;
 import com.leo.enterpriseinertraining.vo.AgentCostVO;
 import com.leo.enterpriseinertraining.vo.ModelCostVO;
 import com.leo.enterpriseinertraining.vo.PlatformOverviewVO;
@@ -57,16 +58,20 @@ public class AdminStatsService {
     // ── 平台总览 ──────────────────────────────────────────────
 
     public PlatformOverviewVO overview() {
-        long total  = taskMapper.selectCountByQuery(QueryWrapper.create());
+        long total  = taskMapper.selectCountByQuery(
+                QueryWrapper.create().where(REPORT_TASK.TENANT_ID.eq(currentTenantId())));
         long done   = countTask("DONE");
         long failed = countTask("FAILED");
         long running = Math.max(0, total - done - failed);
         long finished = done + failed;
         double successRate = finished == 0 ? 0.0 : round((double) done / finished, 4);
 
-        long totalNodeRuns = nodeRunMapper.selectCountByQuery(QueryWrapper.create());
+        long totalNodeRuns = nodeRunMapper.selectCountByQuery(
+                QueryWrapper.create().where(WORKFLOW_NODE_RUN.TASK_ID.in(currentTenantTaskIdSubquery())));
         long errorNodeRuns = nodeRunMapper.selectCountByQuery(
-                QueryWrapper.create().where(WORKFLOW_NODE_RUN.STATUS.eq("ERROR")));
+                QueryWrapper.create()
+                        .where(WORKFLOW_NODE_RUN.STATUS.eq("ERROR"))
+                        .and(WORKFLOW_NODE_RUN.TASK_ID.in(currentTenantTaskIdSubquery())));
 
         List<NodeAggRow> rows = fetchNodeAgg();
         long tokensIn = 0, tokensOut = 0;
@@ -124,9 +129,10 @@ public class AdminStatsService {
     // ── 任务列表 ──────────────────────────────────────────────
 
     public Page<TaskBriefVO> tasks(String status, int page, int size) {
-        QueryWrapper qw = QueryWrapper.create();
+        QueryWrapper qw = QueryWrapper.create()
+                .where(REPORT_TASK.TENANT_ID.eq(currentTenantId()));
         if (status != null && !status.isBlank()) {
-            qw.where(REPORT_TASK.STATUS.eq(status));
+            qw.and(REPORT_TASK.STATUS.eq(status));
         }
         qw.orderBy(REPORT_TASK.ID.desc());
         Page<ReportTask> p = taskMapper.paginate(page, size, qw);
@@ -146,13 +152,28 @@ public class AdminStatsService {
                                 sum(WORKFLOW_NODE_RUN.TOKENS_OUT).as("tokensOut"),
                                 sum(WORKFLOW_NODE_RUN.LATENCY_MS).as("latencySum"))
                         .from(WORKFLOW_NODE_RUN)
+                        .where(WORKFLOW_NODE_RUN.TASK_ID.in(currentTenantTaskIdSubquery()))
                         .groupBy(WORKFLOW_NODE_RUN.MODEL, WORKFLOW_NODE_RUN.AGENT_ROLE),
                 NodeAggRow.class);
     }
 
     private long countTask(String status) {
         return taskMapper.selectCountByQuery(
-                QueryWrapper.create().where(REPORT_TASK.STATUS.eq(status)));
+                QueryWrapper.create()
+                        .where(REPORT_TASK.STATUS.eq(status))
+                        .and(REPORT_TASK.TENANT_ID.eq(currentTenantId())));
+    }
+
+    /** 当前租户的 task_id 子查询：用于 workflow_node_run 这类无 tenant_id 列的表做隔离。 */
+    private QueryWrapper currentTenantTaskIdSubquery() {
+        return QueryWrapper.create()
+                .select(REPORT_TASK.ID)
+                .from(REPORT_TASK)
+                .where(REPORT_TASK.TENANT_ID.eq(currentTenantId()));
+    }
+
+    private static Long currentTenantId() {
+        return SecurityUtils.currentTenantId();
     }
 
     /** DONE 任务平均端到端耗时；只取 startedAt / finishedAt 两列，内存求均值。 */
@@ -162,7 +183,8 @@ public class AdminStatsService {
                         .select(REPORT_TASK.STARTED_AT, REPORT_TASK.FINISHED_AT)
                         .where(REPORT_TASK.STATUS.eq("DONE"))
                         .and(REPORT_TASK.STARTED_AT.isNotNull())
-                        .and(REPORT_TASK.FINISHED_AT.isNotNull()));
+                        .and(REPORT_TASK.FINISHED_AT.isNotNull())
+                        .and(REPORT_TASK.TENANT_ID.eq(currentTenantId())));
         if (done.isEmpty()) return null;
         long sum = 0;
         for (ReportTask t : done) {

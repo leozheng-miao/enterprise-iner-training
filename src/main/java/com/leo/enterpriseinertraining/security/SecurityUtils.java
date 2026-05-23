@@ -20,4 +20,14 @@ public final class SecurityUtils {
     public static Long currentUserId() {
         return currentUserOrThrow().getId();
     }
+
+    /**
+     * 当前登录用户所属的租户 ID。所有业务查询写入与读取都应按此过滤，
+     * 实现多租户逻辑隔离（user.tenant_id 在登录加载时已写入 LoginUser）。
+     * 老用户没有 tenant_id 时默认 0。
+     */
+    public static Long currentTenantId() {
+        Long t = currentUserOrThrow().getUser().getTenantId();
+        return t == null ? 0L : t;
+    }
 }
