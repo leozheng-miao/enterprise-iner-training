@@ -1,0 +1,10 @@
+{
+  "query_rewriter": {
+    "file_name": "../data/train.jsonl",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  }
+}

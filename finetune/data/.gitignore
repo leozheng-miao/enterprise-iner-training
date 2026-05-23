@@ -1,0 +1,4 @@
+# 合成 / 切分产物不入 git，重跑 synthesize.py 即可重建
+train.jsonl
+test.jsonl
+raw_synth.jsonl
