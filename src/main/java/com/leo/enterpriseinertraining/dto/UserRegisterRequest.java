@@ -19,4 +19,10 @@ public class UserRegisterRequest implements Serializable {
 
     @Size(max = 64, message = "长度不能超过 64")
     private String nickname;
+
+    /**
+     * 加入的租户 ID；不传则后端为该用户开一个新租户（tenant_id = user.id），
+     * 实现「一个用户一个租户」的默认隔离。多人共用同一租户时显式传入。
+     */
+    private Long tenantId;
 }

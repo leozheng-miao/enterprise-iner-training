@@ -39,10 +39,19 @@ public class UserServiceImpl implements UserService {
         user.setUsername(req.getUsername());
         user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         user.setNickname(req.getNickname() == null ? req.getUsername() : req.getNickname());
-        user.setTenantId(0L);
         user.setRole("USER");
         user.setStatus(1);
+        // 占位：未指定租户时先填 0，insert 后用自增 id 回填，保证每个新用户默认独占一个租户
+        user.setTenantId(req.getTenantId() != null ? req.getTenantId() : 0L);
         userMapper.insert(user);
+
+        if (req.getTenantId() == null) {
+            User upd = new User();
+            upd.setId(user.getId());
+            upd.setTenantId(user.getId());
+            userMapper.update(upd);            // 仅更新 tenant_id（MyBatis-Flex 默认忽略 null 字段）
+            user.setTenantId(user.getId());
+        }
 
         UserVO vo = new UserVO();
         BeanUtils.copyProperties(user, vo);
