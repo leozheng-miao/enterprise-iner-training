@@ -99,9 +99,10 @@ frontend/src/
 │   ├── format.ts                # ✏️ 追加 formatCny / formatNumber / formatDuration
 │   └── taskStatus.ts            # 🆕 状态→tag type 映射
 ├── mock/
-│   ├── dashboard.ts             # ❌ HomeView 接入真实数据后删除
+│   ├── dashboard.ts             # ✏️ 只删 statItems / recentActivities 两个 const；其余阶段/能力 mock 保留
 │   └── admin-placeholders.ts    # 🆕 集中 mock 数据 + TODO 标注
-└── (HomeView 接入真实接口后，statItems/recentActivities 来自后端)
+├── types/
+│   └── dashboard.ts             # 🆕 StatItem / ActivityItem 从 mock/dashboard.ts 迁出
 ```
 
 **视图文件大小约束**：每个 admin 视图 ≤200 行，业务下沉到 `components/admin/`。
@@ -297,7 +298,7 @@ StatCard × 4：总任务数 / 成功率 / 总 Token 成本 / P95 耗时
 - 「系统健康」：
   - 1 条真实「API 服务」：`GET /api/health` 轮询 60s，正常显示「正常」+ 响应耗时。
   - 2 条 mock：「Redis 缓存」「SSE 服务」，常态显示「正常」。来自 `mock/admin-placeholders.ts`，打 TODO。
-- StatCard **不显示「较昨日 ±x%」同比行**（后端无此字段，见后端 TODO #2）。
+- StatCard **不显示「较昨日 ±x%」同比行**（后端无此字段，见后端 TODO #2）。**改造点**：`components/stat/StatCard.vue` 现有 `delta` 字段必传；本批次需把 `StatItem.delta` 改成 `delta?`，模板 `v-if="item.delta"` 控制渲染；同时把 `StatItem` 类型从 `mock/dashboard.ts` 迁出到 `types/dashboard.ts`（与 `ActivityItem` 一并迁），便于真实接口数据复用。
 
 **格式**：
 - 成功率 `(x*100).toFixed(1)%`
@@ -457,7 +458,7 @@ onMounted → Promise.all([
 
 「最近活动」列表：由 `Page<TaskBriefVO>.records` 映射，行内容 = 主标题 `topic` / 副标题 `#{id} · {status tag} · {phase ?? '—'}` / 右侧 `formatTs(startedAt)`；点击行 → `/report/:id`。
 
-**清理**：删除 `src/mock/dashboard.ts`。
+**清理**：`src/mock/dashboard.ts` **只删两个 const 导出**：`statItems` 和 `recentActivities`（连带它们的注释段）。保留 `stageNodes / stageDetails / currentStage / coreCapabilities` 等内容，因为 HomeView 的项目阶段总览与核心能力卡仍需要它们（这些不是平台运行时数据，是项目展示文案）。`StatItem` 与 `ActivityItem` 类型已迁到 `types/dashboard.ts`，原文件不再导出这两个类型。
 
 ---
 
