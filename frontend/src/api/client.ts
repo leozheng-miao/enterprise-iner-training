@@ -87,4 +87,7 @@ export const apiGet = <T>(url: string, params?: object) =>
 export const apiPost = <T>(url: string, data?: object, params?: object) =>
   http<T>({ method: 'POST', url, data, params })
 
+export const apiPut = <T>(url: string, data?: object) =>
+  http<T>({ method: 'PUT', url, data })
+
 export const apiClient = instance

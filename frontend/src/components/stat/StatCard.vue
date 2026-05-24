@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import * as ElIcons from '@element-plus/icons-vue'
 import { InfoFilled } from '@element-plus/icons-vue'
-import type { StatItem } from '@/mock/dashboard'
+import type { StatItem } from '@/types/dashboard'
 
 const props = defineProps<{
   item: StatItem
@@ -31,7 +31,7 @@ const iconComponent = computed(() => {
       <div class="stat-value">
         {{ item.value }}<span v-if="item.unit" class="stat-unit">{{ item.unit }}</span>
       </div>
-      <div class="stat-delta">
+      <div v-if="item.delta" class="stat-delta">
         {{ item.delta.note }} <span class="delta-raw">{{ item.delta.raw }}</span>
         <span class="delta-percent" :class="item.delta.trend">({{ item.delta.percent }})</span>
       </div>

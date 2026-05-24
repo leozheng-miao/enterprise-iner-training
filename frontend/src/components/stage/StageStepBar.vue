@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check } from '@element-plus/icons-vue'
-import type { StageNode } from '@/mock/dashboard'
+import type { StageNode } from '@/types/dashboard'
 
 defineProps<{
   nodes: StageNode[]

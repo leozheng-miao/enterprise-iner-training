@@ -10,7 +10,12 @@ import {
   Connection,
   User,
   Bell,
-  ArrowDown
+  ArrowDown,
+  PieChart,
+  Tickets,
+  EditPen,
+  DataLine,
+  Setting
 } from '@element-plus/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 
@@ -29,6 +34,12 @@ interface MenuItem {
   disabled?: boolean
 }
 
+interface MenuGroup {
+  key: string
+  label: string
+  items: MenuItem[]
+}
+
 const menus: MenuItem[] = [
   { key: 'home', label: '首页', icon: HomeFilled, path: '/' },
   { key: 'rag', label: 'RAG 检索', icon: Search, path: '/rag' },
@@ -39,10 +50,28 @@ const menus: MenuItem[] = [
   { key: 'user', label: '用户中心', icon: User, disabled: true }
 ]
 
+const adminGroup: MenuGroup = {
+  key: 'admin',
+  label: '管理中心',
+  items: [
+    { key: 'admin-stats',    label: '平台统计',    icon: PieChart,     path: '/admin/stats' },
+    { key: 'admin-tasks',    label: '任务管理',    icon: Tickets,      path: '/admin/tasks' },
+    { key: 'admin-prompts',  label: 'Prompt 管理', icon: EditPen,      path: '/admin/prompts' },
+    { key: 'admin-judge',    label: 'Judge 评估',  icon: DataLine,     path: '/admin/judge' },
+    { key: 'admin-workflow', label: 'Workflow 管理', icon: Setting,    path: '/admin/workflow' }
+  ]
+}
+
 const activeMenu = computed(() => {
-  if (route.path === '/') return 'home'
-  if (route.path.startsWith('/rag')) return 'rag'
-  if (route.path.startsWith('/report')) return 'report'
+  const p = route.path
+  if (p === '/') return 'home'
+  if (p.startsWith('/rag')) return 'rag'
+  if (p.startsWith('/report')) return 'report'
+  if (p.startsWith('/admin/stats')) return 'admin-stats'
+  if (p.startsWith('/admin/tasks')) return 'admin-tasks'
+  if (p.startsWith('/admin/prompts')) return 'admin-prompts'
+  if (p.startsWith('/admin/judge')) return 'admin-judge'
+  if (p.startsWith('/admin/workflow')) return 'admin-workflow'
   return ''
 })
 
@@ -79,6 +108,18 @@ onMounted(async () => {
       <nav class="sidebar-menu">
         <div
           v-for="m in menus"
+          :key="m.key"
+          class="menu-item"
+          :class="{ active: activeMenu === m.key, disabled: m.disabled }"
+          @click="onMenuClick(m)"
+        >
+          <el-icon :size="18"><component :is="m.icon" /></el-icon>
+          <span>{{ m.label }}</span>
+        </div>
+
+        <div class="menu-group-label">{{ adminGroup.label }}</div>
+        <div
+          v-for="m in adminGroup.items"
           :key="m.key"
           class="menu-item"
           :class="{ active: activeMenu === m.key, disabled: m.disabled }"
@@ -221,6 +262,14 @@ onMounted(async () => {
 .menu-item.disabled {
   color: var(--text-tertiary);
   cursor: not-allowed;
+}
+
+.menu-group-label {
+  margin: 12px 12px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.4px;
 }
 
 .sidebar-footer {

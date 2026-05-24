@@ -47,6 +47,36 @@ const routes: RouteRecordRaw[] = [
         name: 'report-detail',
         component: () => import('@/views/report/ReportDetailView.vue'),
         meta: { requiresAuth: true, title: '研究报告详情' }
+      },
+      {
+        path: 'admin/stats',
+        name: 'admin-stats',
+        component: () => import('@/views/admin/AdminStatsView.vue'),
+        meta: { requiresAuth: true, title: '平台统计' }
+      },
+      {
+        path: 'admin/tasks',
+        name: 'admin-tasks',
+        component: () => import('@/views/admin/AdminTaskListView.vue'),
+        meta: { requiresAuth: true, title: '任务管理' }
+      },
+      {
+        path: 'admin/prompts',
+        name: 'admin-prompts',
+        component: () => import('@/views/admin/AdminPromptView.vue'),
+        meta: { requiresAuth: true, title: 'Prompt 管理' }
+      },
+      {
+        path: 'admin/judge',
+        name: 'admin-judge',
+        component: () => import('@/views/admin/AdminJudgeView.vue'),
+        meta: { requiresAuth: true, title: 'Judge 评估' }
+      },
+      {
+        path: 'admin/workflow',
+        name: 'admin-workflow',
+        component: () => import('@/views/admin/AdminWorkflowView.vue'),
+        meta: { requiresAuth: true, title: 'Workflow 管理' }
       }
     ]
   },

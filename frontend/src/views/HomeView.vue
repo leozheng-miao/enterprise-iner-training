@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import StatCard from '@/components/stat/StatCard.vue'
 import StageStepBar from '@/components/stage/StageStepBar.vue'
@@ -7,14 +7,22 @@ import StageOverview from '@/components/stage/StageOverview.vue'
 import QuickStartCard from '@/components/home/QuickStartCard.vue'
 import CoreCapabilityCard from '@/components/home/CoreCapabilityCard.vue'
 import RecentActivityList from '@/components/home/RecentActivityList.vue'
+import { adminApi } from '@/api/admin'
 import {
   coreCapabilities,
   currentStage,
-  recentActivities,
   stageDetails,
-  stageNodes,
-  statItems
+  stageNodes
 } from '@/mock/dashboard'
+import type { ActivityItem, StatItem } from '@/types/dashboard'
+import type { PlatformOverviewVO, TaskBriefVO } from '@/types/admin'
+import {
+  formatCny,
+  formatEpochMillis,
+  formatNumber,
+  formatPercent
+} from '@/utils/format'
+import { STATUS_LABEL } from '@/utils/taskStatus'
 
 const auth = useAuthStore()
 
@@ -29,6 +37,44 @@ const greeting = computed(() => {
 
 const displayName = computed(
   () => auth.user?.nickname || auth.user?.username || '访客'
+)
+
+const overview = ref<PlatformOverviewVO | null>(null)
+const recentTasks = ref<TaskBriefVO[]>([])
+
+onMounted(async () => {
+  try {
+    const [o, page] = await Promise.all([
+      adminApi.overview(),
+      adminApi.tasks('', 1, 5)
+    ])
+    overview.value = o
+    recentTasks.value = page.records
+  } catch {
+    /* 业务错误已由拦截器 toast，此处保留兜底空数据 */
+  }
+})
+
+const statItems = computed<StatItem[]>(() => {
+  const o = overview.value
+  if (!o) return []
+  return [
+    { key: 'total',   label: '总任务数',      value: formatNumber(o.totalTasks),       iconName: 'Document',  iconBg: '#dbeafe' },
+    { key: 'success', label: '成功率',        value: formatPercent(o.successRate),     iconName: 'Histogram', iconBg: '#dcfce7' },
+    { key: 'cost',    label: '总 Token 成本', value: formatCny(o.totalCostCny),        iconName: 'Money',     iconBg: '#fef3c7' },
+    { key: 'p95',     label: 'P95 耗时',      value: formatNumber(o.p95LatencyMs),     unit: 'ms', iconName: 'Timer', iconBg: '#ede9fe' }
+  ]
+})
+
+const recentActivities = computed<ActivityItem[]>(() =>
+  recentTasks.value.map((t) => ({
+    id: String(t.id),
+    title: t.topic,
+    description: `#${t.id} · ${STATUS_LABEL[t.status]} · ${t.phase ?? '—'}`,
+    time: formatEpochMillis(t.startedAt),
+    iconName: 'VideoPlay',
+    iconColor: '#3b82f6'
+  }))
 )
 </script>
 

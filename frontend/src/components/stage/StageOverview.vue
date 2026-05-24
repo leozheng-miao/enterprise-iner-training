@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check } from '@element-plus/icons-vue'
-import type { CurrentStageInfo, StageDetail } from '@/mock/dashboard'
+import type { CurrentStageInfo, StageDetail } from '@/types/dashboard'
 
 defineProps<{
   details: StageDetail[]

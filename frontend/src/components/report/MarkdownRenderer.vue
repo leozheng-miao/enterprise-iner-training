@@ -17,11 +17,12 @@ const emit = defineEmits<{
 }>()
 
 // ===== markdown-it 实例（带 hljs + citation plugin） =====
-const md = new MarkdownIt({
+// 显式类型注解，避免 highlight 回调里引用 md.utils 触发的 TS7022 循环推导错误。
+const md: MarkdownIt = new MarkdownIt({
   html: false,
   linkify: true,
   breaks: false,
-  highlight(code, lang) {
+  highlight(code: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
       try {
         return `<pre class="hljs"><code>${

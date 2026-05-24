@@ -31,3 +31,30 @@ export function formatClock(ms: number): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
+
+/** 千分位格式化（中国本地化）。 */
+export function formatNumber(n: number | null | undefined): string {
+  if (n == null) return '—'
+  return n.toLocaleString('zh-CN')
+}
+
+/** 金额格式化（人民币，2 位小数）。 */
+export function formatCny(n: number | null | undefined): string {
+  if (n == null) return '—'
+  return `¥${n.toFixed(2)}`
+}
+
+/** 把 ms 时长格式化为 "mm:ss"。负数或 null 返回 '—'。 */
+export function formatDurationMs(ms: number | null | undefined): string {
+  if (ms == null || ms < 0) return '—'
+  const sec = Math.round(ms / 1000)
+  const m = String(Math.floor(sec / 60)).padStart(2, '0')
+  const s = String(sec % 60).padStart(2, '0')
+  return `${m}:${s}`
+}
+
+/** 把 0.0~1.0 的成功率格式化为 "xx.x%"。 */
+export function formatPercent(ratio: number | null | undefined): string {
+  if (ratio == null || Number.isNaN(ratio)) return '—'
+  return `${(ratio * 100).toFixed(1)}%`
+}

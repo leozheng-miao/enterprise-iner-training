@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import * as ElIcons from '@element-plus/icons-vue'
-import type { CoreCapability } from '@/mock/dashboard'
+import type { CoreCapability } from '@/types/dashboard'
 
 const props = defineProps<{
   item: CoreCapability

@@ -90,7 +90,7 @@ function statusTagType(s: TraceRow['status']): 'success' | 'danger' {
           <el-switch
             :model-value="autoRefresh"
             size="small"
-            @update:model-value="(v) => emit('update:autoRefresh', v as boolean)"
+            @update:model-value="(v: string | number | boolean) => emit('update:autoRefresh', v as boolean)"
           />
         </span>
       </div>

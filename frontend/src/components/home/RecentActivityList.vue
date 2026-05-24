@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import * as ElIcons from '@element-plus/icons-vue'
-import type { ActivityItem } from '@/mock/dashboard'
+import type { ActivityItem } from '@/types/dashboard'
 
 defineProps<{
   activities: ActivityItem[]
