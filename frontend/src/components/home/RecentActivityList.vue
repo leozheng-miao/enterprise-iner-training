@@ -1,15 +1,28 @@
 <script setup lang="ts">
 import * as ElIcons from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 import type { ActivityItem } from '@/types/dashboard'
 
-defineProps<{
+const props = defineProps<{
   activities: ActivityItem[]
+  /** 「查看全部」「查看更多活动」点击跳转的路由。未设置则不渲染这两个链接。 */
+  moreLink?: string
 }>()
+
+const router = useRouter()
 
 function iconOf(name: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const all = ElIcons as any as Record<string, unknown>
   return all[name] ?? ElIcons.Document
+}
+
+function onItemClick(a: ActivityItem) {
+  if (a.to) router.push(a.to)
+}
+
+function onMoreClick() {
+  if (props.moreLink) router.push(props.moreLink)
 }
 </script>
 
@@ -17,11 +30,19 @@ function iconOf(name: string) {
   <section class="rec-act">
     <header class="ra-header">
       <h3 class="ra-title">最近活动</h3>
-      <a class="ra-link">查看全部 ›</a>
+      <a v-if="moreLink" class="ra-link" @click="onMoreClick">查看全部 ›</a>
     </header>
 
-    <ul class="ra-list">
-      <li v-for="a in activities" :key="a.id" class="ra-item">
+    <el-empty v-if="activities.length === 0" description="暂无最近活动" :image-size="60" />
+
+    <ul v-else class="ra-list">
+      <li
+        v-for="a in activities"
+        :key="a.id"
+        class="ra-item"
+        :class="{ clickable: !!a.to }"
+        @click="onItemClick(a)"
+      >
         <span class="ra-bullet" :style="{ background: a.iconColor }">
           <el-icon :size="14" style="color: #fff;">
             <component :is="iconOf(a.iconName)" />
@@ -37,7 +58,7 @@ function iconOf(name: string) {
       </li>
     </ul>
 
-    <a class="ra-more">查看更多活动 ›</a>
+    <a v-if="moreLink && activities.length > 0" class="ra-more" @click="onMoreClick">查看更多活动 ›</a>
   </section>
 </template>
 
@@ -70,6 +91,11 @@ function iconOf(name: string) {
   cursor: pointer;
 }
 
+.ra-link:hover,
+.ra-more:hover {
+  text-decoration: underline;
+}
+
 .ra-list {
   list-style: none;
   margin: 0;
@@ -79,8 +105,17 @@ function iconOf(name: string) {
 .ra-item {
   display: flex;
   gap: 10px;
-  padding: 10px 0;
+  padding: 10px 8px;
   border-bottom: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.ra-item.clickable {
+  cursor: pointer;
+}
+
+.ra-item.clickable:hover {
+  background: var(--bg-muted);
 }
 
 .ra-item:last-child {
@@ -105,12 +140,16 @@ function iconOf(name: string) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .ra-text {
   font-size: 13px;
   color: var(--text-primary);
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ra-time {

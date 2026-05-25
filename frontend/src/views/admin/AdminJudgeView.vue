@@ -110,6 +110,9 @@ onMounted(load)
         </el-button>
         <span class="hint">评分约 5-15s，请耐心等待</span>
       </div>
+      <div class="variance-note">
+        ⓘ 评分由 qwen-max 完成（temperature 已设为 0），但 LLM 服务端仍可能产生 ±0.5 分内波动属正常现象。如需完全确定性结果，请用首次评分的历史记录。
+      </div>
     </div>
 
     <div class="list-card">
@@ -215,6 +218,15 @@ onMounted(load)
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field label { font-size: 12px; color: var(--text-tertiary); }
 .hint { font-size: 12px; color: var(--text-tertiary); }
+.variance-note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  line-height: 1.6;
+}
 .card-header {
   display: flex;
   align-items: center;

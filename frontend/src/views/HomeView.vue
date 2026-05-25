@@ -2,18 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import StatCard from '@/components/stat/StatCard.vue'
-import StageStepBar from '@/components/stage/StageStepBar.vue'
-import StageOverview from '@/components/stage/StageOverview.vue'
 import QuickStartCard from '@/components/home/QuickStartCard.vue'
 import CoreCapabilityCard from '@/components/home/CoreCapabilityCard.vue'
 import RecentActivityList from '@/components/home/RecentActivityList.vue'
 import { adminApi } from '@/api/admin'
-import {
-  coreCapabilities,
-  currentStage,
-  stageDetails,
-  stageNodes
-} from '@/mock/dashboard'
+import { coreCapabilities } from '@/mock/dashboard'
 import type { ActivityItem, StatItem } from '@/types/dashboard'
 import type { PlatformOverviewVO, TaskBriefVO } from '@/types/admin'
 import {
@@ -46,7 +39,7 @@ onMounted(async () => {
   try {
     const [o, page] = await Promise.all([
       adminApi.overview(),
-      adminApi.tasks('', 1, 5)
+      adminApi.tasks('', 1, 10)
     ])
     overview.value = o
     recentTasks.value = page.records
@@ -66,15 +59,27 @@ const statItems = computed<StatItem[]>(() => {
   ]
 })
 
+// 任务状态 → 图标 + 颜色映射（让最近活动列表的小圆点能反映任务状态）
+const STATUS_ICON: Record<string, { iconName: string; iconColor: string }> = {
+  PENDING: { iconName: 'Clock',      iconColor: '#9ca3af' },
+  RUNNING: { iconName: 'VideoPlay',  iconColor: '#3b82f6' },
+  DONE:    { iconName: 'CircleCheck',iconColor: '#10b981' },
+  FAILED:  { iconName: 'CircleClose',iconColor: '#ef4444' }
+}
+
 const recentActivities = computed<ActivityItem[]>(() =>
-  recentTasks.value.map((t) => ({
-    id: String(t.id),
-    title: t.topic,
-    description: `#${t.id} · ${STATUS_LABEL[t.status]} · ${t.phase ?? '—'}`,
-    time: formatEpochMillis(t.startedAt),
-    iconName: 'VideoPlay',
-    iconColor: '#3b82f6'
-  }))
+  recentTasks.value.map((t) => {
+    const icon = STATUS_ICON[t.status] ?? STATUS_ICON.PENDING
+    return {
+      id: String(t.id),
+      title: t.topic,
+      description: `#${t.id} · ${STATUS_LABEL[t.status]} · ${t.phase ?? '—'}`,
+      time: formatEpochMillis(t.createdAt),
+      iconName: icon.iconName,
+      iconColor: icon.iconColor,
+      to: `/report/${t.id}`
+    }
+  })
 )
 </script>
 
@@ -108,33 +113,26 @@ const recentActivities = computed<ActivityItem[]>(() =>
           />
           <QuickStartCard
             title="查看 Trace"
-            description="追踪链路"
+            description="任务管理"
             icon-name="Share"
             icon-bg="#ede9fe"
+            to="/admin/tasks"
           />
         </div>
       </div>
     </section>
-
-    <!-- 项目阶段概览 -->
-    <StageStepBar :nodes="stageNodes" />
 
     <!-- 4 统计卡 -->
     <section class="stats-row">
       <StatCard v-for="s in statItems" :key="s.key" :item="s" />
     </section>
 
-    <!-- 两栏：左侧 = 阶段进度总览 + 当前阶段；右侧 = 核心能力 + 最近活动 -->
+    <!-- 两栏：左侧 = 核心能力；右侧 = 最近活动（10 条，可点击跳详情，可跳列表） -->
     <section class="two-col">
       <div class="col-left">
-        <StageOverview :details="stageDetails" :current="currentStage" />
-      </div>
-
-      <div class="col-right">
         <div class="capability-block">
           <header class="block-header">
             <h3 class="block-title">核心能力</h3>
-            <a class="block-link">查看全部 ›</a>
           </header>
           <div class="capability-grid">
             <CoreCapabilityCard
@@ -144,8 +142,13 @@ const recentActivities = computed<ActivityItem[]>(() =>
             />
           </div>
         </div>
+      </div>
 
-        <RecentActivityList :activities="recentActivities" />
+      <div class="col-right">
+        <RecentActivityList
+          :activities="recentActivities"
+          more-link="/admin/tasks"
+        />
       </div>
     </section>
   </div>
@@ -216,18 +219,12 @@ const recentActivities = computed<ActivityItem[]>(() =>
 /* Two-col ========================================= */
 .two-col {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr 420px;
   gap: 20px;
   align-items: start;
 }
 
-.col-left {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
+.col-left,
 .col-right {
   display: flex;
   flex-direction: column;
@@ -256,19 +253,13 @@ const recentActivities = computed<ActivityItem[]>(() =>
   color: var(--text-primary);
 }
 
-.block-link {
-  font-size: 12px;
-  color: var(--color-primary);
-  cursor: pointer;
-}
-
 .capability-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-/* Responsive：1280 以下右栏收掉 */
+/* Responsive：1280 以下右栏堆叠 */
 @media (max-width: 1280px) {
   .hero-row,
   .two-col {

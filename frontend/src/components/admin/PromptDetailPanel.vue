@@ -50,7 +50,7 @@ function save() {
     <header class="header">
       <h2>版本详情</h2>
       <div class="actions" v-if="detail && mode === 'view'">
-        <el-button :icon="CircleCheck" :disabled="detail.isActive" @click="emit('activate')">
+        <el-button :icon="CircleCheck" :disabled="detail.active" @click="emit('activate')">
           设为生效版本
         </el-button>
         <el-button :icon="EditPen" @click="emit('enter-edit')">编辑内容</el-button>
@@ -87,11 +87,15 @@ function save() {
         </div>
         <div class="meta-row">
           <span>状态</span>
-          <el-tag :type="detail.isActive ? 'success' : 'warning'" size="small">
-            {{ detail.isActive ? '生效' : '未生效' }}
+          <el-tag
+            class="status-tag"
+            :type="detail.active ? 'success' : 'warning'"
+            size="small"
+          >
+            {{ detail.active ? '生效' : '未生效' }}
           </el-tag>
         </div>
-        <div class="meta-row"><span>创建时间</span><b>{{ formatEpochMillis(detail.createdAt) }}</b></div>
+        <div class="meta-row"><span>创建时间</span><b>{{ formatEpochMillis(detail.createTime) }}</b></div>
       </div>
 
       <div class="content-block">
@@ -149,6 +153,8 @@ function save() {
 .meta-row { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .meta-row span { color: var(--text-tertiary); }
 .meta-row b { color: var(--text-primary); font-weight: 500; }
+/* el-tag 默认 display:inline-block，但 flex column 子项会被 stretch；显式自对齐避免铺满 */
+.meta-row .status-tag { align-self: flex-start; }
 .content-block h3 { margin: 0 0 8px; font-size: 14px; }
 .readonly {
   background: #0b1020;

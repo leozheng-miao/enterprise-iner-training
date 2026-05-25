@@ -61,11 +61,23 @@ function render() {
   chart.setOption(buildOption(props.data, props.barColor), true)
 }
 
+// 容器尺寸变化时，先 resize（重画 canvas），再延后一帧 re-setOption（强制 ECharts 重新计算 layout）。
+// 没有 re-setOption 时，缩窄 → 复原后 ECharts 的 bar layout 状态可能保持压缩态，柱子看起来被拉长。
+let resizeTimer: number | null = null
+function onResize() {
+  chart?.resize()
+  if (resizeTimer !== null) window.clearTimeout(resizeTimer)
+  resizeTimer = window.setTimeout(() => {
+    render()
+    resizeTimer = null
+  }, 120)
+}
+
 onMounted(() => {
   if (!root.value) return
   chart = init(root.value)
   render()
-  useResizeObserver(root, () => chart?.resize())
+  useResizeObserver(root, onResize)
 })
 
 watch(
@@ -75,6 +87,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (resizeTimer !== null) window.clearTimeout(resizeTimer)
   chart?.dispose()
   chart = null
 })

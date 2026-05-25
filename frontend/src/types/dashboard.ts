@@ -62,4 +62,6 @@ export interface ActivityItem {
   time: string
   iconName: string
   iconColor: string
+  /** 点击该行跳转的路由（绝对路径）。未设置则该行不可点击。 */
+  to?: string
 }

@@ -31,12 +31,16 @@ export type TaskStatus = 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED'
 
 export interface TaskBriefVO {
   id: number
+  userId: number | null
   topic: string
   status: TaskStatus
   phase: string | null
   progress: number | null
-  startedAt: number | null
-  finishedAt: number | null
+  errorMessage: string | null
+  /** 端到端耗时（finishedAt - startedAt），未结束时为 null。 */
+  latencyMs: number | null
+  /** 创建时间，epoch 毫秒。 */
+  createdAt: number | null
 }
 
 export interface PromptTemplateVO {
@@ -46,8 +50,14 @@ export interface PromptTemplateVO {
   content: string
   model: string | null
   temperature: number | null
-  isActive: boolean
-  createdAt: number
+  /**
+   * 是否为当前灰度生效版本。
+   * 后端 Lombok boolean + Jackson 默认序列化去掉 is 前缀 → 字段名为 active（不是 isActive）。
+   */
+  active: boolean
+  description: string | null
+  createTime: number
+  updateTime: number | null
 }
 
 export interface PromptCreateRequest {

@@ -98,17 +98,14 @@ onMounted(load)
           />
         </template>
       </el-table-column>
-      <el-table-column label="开始时间" width="170">
+      <el-table-column label="创建时间" width="170">
         <template #default="{ row }">
-          {{ formatEpochMillis((row as TaskBriefVO).startedAt) }}
+          {{ formatEpochMillis((row as TaskBriefVO).createdAt) }}
         </template>
       </el-table-column>
       <el-table-column label="完成耗时" width="110">
         <template #default="{ row }">
-          <template v-if="(row as TaskBriefVO).startedAt != null && (row as TaskBriefVO).finishedAt != null">
-            {{ formatDurationMs(((row as TaskBriefVO).finishedAt as number) - ((row as TaskBriefVO).startedAt as number)) }}
-          </template>
-          <template v-else>—</template>
+          {{ formatDurationMs((row as TaskBriefVO).latencyMs) }}
         </template>
       </el-table-column>
       <el-table-column label="操作" width="160">

@@ -61,7 +61,7 @@ const groups = computed<Group[]>(() => {
         >
           <span class="version-label">{{ v.version }}</span>
           <el-tag
-            v-if="v.isActive"
+            v-if="v.active"
             type="success"
             size="small"
             effect="light"
