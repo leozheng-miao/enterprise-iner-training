@@ -28,6 +28,11 @@ public class SseSinkManager {
     /** taskId → 本 JVM 持有的 emitter；未在本 JVM 注册的 task 不在 map 里。 */
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
+    /** 当前活跃 SSE 连接数（Admin 系统健康面板使用）。 */
+    public int activeCount() {
+        return emitters.size();
+    }
+
     /** 客户端 GET 时调用，注册一个新的 SseEmitter。 */
     public SseEmitter register(long taskId) {
         SseEmitter emitter = new SseEmitter(0L);   // 永不超时；由后端 close 决定

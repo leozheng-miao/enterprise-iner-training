@@ -1,12 +1,14 @@
 package com.leo.enterpriseinertraining.workflow;
 
+import com.leo.enterpriseinertraining.mapper.WorkflowLoadLogMapper;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorkflowLoaderTest {
 
-    private final WorkflowLoader loader = new WorkflowLoader();
+    private final WorkflowLoader loader = new WorkflowLoader(Mockito.mock(WorkflowLoadLogMapper.class));
 
     @Test
     void load_researcher_only_v1() {

@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -58,8 +60,14 @@ public class AdminStatsService {
     // ── 平台总览 ──────────────────────────────────────────────
 
     public PlatformOverviewVO overview() {
+        Long tenant = currentTenantId();
+        LocalDateTime todayStart    = LocalDate.now().atStartOfDay();
+        LocalDateTime yesterdayStart= todayStart.minusDays(1);
+        LocalDateTime now           = LocalDateTime.now();
+
+        // ── 当前累积口径（与历史行为兼容：不限时间窗）─────────────
         long total  = taskMapper.selectCountByQuery(
-                QueryWrapper.create().where(REPORT_TASK.TENANT_ID.eq(currentTenantId())));
+                QueryWrapper.create().where(REPORT_TASK.TENANT_ID.eq(tenant)));
         long done   = countTask("DONE");
         long failed = countTask("FAILED");
         long running = Math.max(0, total - done - failed);
@@ -95,7 +103,47 @@ public class AdminStatsService {
         vo.setTotalTokensOut(tokensOut);
         vo.setTotalCostCny(round(cost, 4));
         vo.setAvgTaskLatencyMs(avgDoneTaskLatency());
+
+        // ── #8 P95（基于今天窗口；样本 < 20 返回 null）─────────────
+        long doneSampleN = taskMapper.countDoneTasksInWindow(tenant, todayStart, now);
+        if (doneSampleN >= 20) {
+            long offset = (long) Math.floor(doneSampleN * 0.95);
+            vo.setP95TaskLatencyMs(taskMapper.selectP95LatencyMs(tenant, todayStart, now, offset));
+        } else {
+            vo.setP95TaskLatencyMs(null);
+        }
+
+        // ── #2 同比（昨日同窗口）────────────────────────────────
+        long todayTotal     = taskMapper.countTasksInWindow(tenant, todayStart, now);
+        long yesterdayTotal = taskMapper.countTasksInWindow(tenant, yesterdayStart, todayStart);
+        long todayDone      = taskMapper.countDoneInWindow(tenant, todayStart, now);
+        long yesterdayDone  = taskMapper.countDoneInWindow(tenant, yesterdayStart, todayStart);
+        Long todayAvg       = taskMapper.avgLatencyInWindow(tenant, todayStart, now);
+        Long yesterdayAvg   = taskMapper.avgLatencyInWindow(tenant, yesterdayStart, todayStart);
+
+        double todaySuccess     = todayTotal == 0 ? 0.0 : (double) todayDone / todayTotal;
+        double yesterdaySuccess = yesterdayTotal == 0 ? 0.0 : (double) yesterdayDone / yesterdayTotal;
+
+        double todayCost     = estimateWindowCost(tenant, todayStart, now);
+        double yesterdayCost = estimateWindowCost(tenant, yesterdayStart, todayStart);
+
+        vo.setCompareWindowLabel("较昨日");
+        vo.setTotalTasksDelta(todayTotal - yesterdayTotal);
+        vo.setTaskSuccessRateDelta(round(todaySuccess - yesterdaySuccess, 4));
+        vo.setTotalCostCnyDelta(round(todayCost - yesterdayCost, 4));
+        vo.setAvgTaskLatencyMsDelta(
+                todayAvg == null && yesterdayAvg == null ? 0L
+                : nz(todayAvg) - nz(yesterdayAvg));
+
         return vo;
+    }
+
+    private double estimateWindowCost(Long tenant, LocalDateTime from, LocalDateTime to) {
+        java.util.Map<String, Object> sums = taskMapper.sumTokensInWindow(tenant, from, to);
+        if (sums == null) return 0.0;
+        long ti = ((Number) sums.getOrDefault("tokens_in", 0)).longValue();
+        long to_ = ((Number) sums.getOrDefault("tokens_out", 0)).longValue();
+        return ModelPricing.costCny("qwen-max", ti, to_);
     }
 
     // ── Token 成本看板 ────────────────────────────────────────
