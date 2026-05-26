@@ -31,8 +31,9 @@ defineProps<{
         <template #default="{ row }">{{ formatCny(row.costCny) }}</template>
       </el-table-column>
       <el-table-column label="平均耗时" width="100" align="right">
-        <!-- TODO(backend-api-gap #3): ModelCostVO 暂无 avgLatencyMs -->
-        <template #default>—</template>
+        <template #default="{ row }">
+          {{ (row as ModelCostVO).avgLatencyMs == null ? '—' : `${(row as ModelCostVO).avgLatencyMs} ms` }}
+        </template>
       </el-table-column>
     </el-table>
   </div>

@@ -58,7 +58,7 @@ const statItems = computed<StatItem[]>(() => {
     {
       key: 'success',
       label: '成功率',
-      value: formatPercent(o.successRate),
+      value: formatPercent(o.taskSuccessRate),
       iconName: 'Histogram',
       iconBg: '#dcfce7'
     },
@@ -70,9 +70,9 @@ const statItems = computed<StatItem[]>(() => {
       iconBg: '#fef3c7'
     },
     {
-      key: 'p95',
-      label: 'P95 耗时',
-      value: formatNumber(o.p95LatencyMs),
+      key: 'avg',
+      label: '平均耗时',
+      value: formatNumber(o.avgTaskLatencyMs),
       unit: 'ms',
       iconName: 'Timer',
       iconBg: '#ede9fe'

@@ -5,10 +5,19 @@
 
 export interface PlatformOverviewVO {
   totalTasks: number
-  successRate: number          // 0.0~1.0
+  doneTasks: number
+  failedTasks: number
+  runningTasks: number
+  /** 已结束任务中 DONE 占比，0~1。 */
+  taskSuccessRate: number
+  totalNodeRuns: number
+  errorNodeRuns: number
+  totalTokensIn: number
+  totalTokensOut: number
+  /** 全平台累计 Token 成本，单位：元。 */
   totalCostCny: number
-  avgLatencyMs: number
-  p95LatencyMs: number
+  /** DONE 任务平均端到端耗时（ms），无样本时为 null。后端目前未提供 P95，前端展示用这个。 */
+  avgTaskLatencyMs: number | null
 }
 
 export interface ModelCostVO {
@@ -16,7 +25,10 @@ export interface ModelCostVO {
   calls: number
   tokensIn: number
   tokensOut: number
+  /** 该模型累计成本，单位：元。 */
   costCny: number
+  /** 平均单次调用耗时（ms），无样本时为 null。 */
+  avgLatencyMs: number | null
 }
 
 export interface AgentCostVO {

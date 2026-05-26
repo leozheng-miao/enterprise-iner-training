@@ -52,10 +52,10 @@ const statItems = computed<StatItem[]>(() => {
   const o = overview.value
   if (!o) return []
   return [
-    { key: 'total',   label: '总任务数',      value: formatNumber(o.totalTasks),       iconName: 'Document',  iconBg: '#dbeafe' },
-    { key: 'success', label: '成功率',        value: formatPercent(o.successRate),     iconName: 'Histogram', iconBg: '#dcfce7' },
-    { key: 'cost',    label: '总 Token 成本', value: formatCny(o.totalCostCny),        iconName: 'Money',     iconBg: '#fef3c7' },
-    { key: 'p95',     label: 'P95 耗时',      value: formatNumber(o.p95LatencyMs),     unit: 'ms', iconName: 'Timer', iconBg: '#ede9fe' }
+    { key: 'total',   label: '总任务数',      value: formatNumber(o.totalTasks),         iconName: 'Document',  iconBg: '#dbeafe' },
+    { key: 'success', label: '成功率',        value: formatPercent(o.taskSuccessRate),   iconName: 'Histogram', iconBg: '#dcfce7' },
+    { key: 'cost',    label: '总 Token 成本', value: formatCny(o.totalCostCny),          iconName: 'Money',     iconBg: '#fef3c7' },
+    { key: 'avg',     label: '平均耗时',      value: formatNumber(o.avgTaskLatencyMs),   unit: 'ms', iconName: 'Timer', iconBg: '#ede9fe' }
   ]
 })
 
