@@ -11,10 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * LLM-as-Judge 评分管理 API：跑一次评分 / 查某 task 历史 / 查当前租户最近评分。
- * 全部走 ReportService.findById 的 tenant 校验，跨租户访问返回 NOT_FOUND。
- */
 @RestController
 @RequestMapping("/api/admin/eval/judge")
 @RequiredArgsConstructor
@@ -24,9 +20,12 @@ public class AdminReportJudgeController {
     private final ReportJudgeService judgeService;
 
     @PostMapping("/{taskId}")
-    @Operation(summary = "对该 task 跑一次评分（qwen-max 评委，约 5-15s）")
-    public BaseResponse<JudgeRunVO> judge(@PathVariable long taskId) {
-        return ResultUtils.success(judgeService.judge(taskId));
+    @Operation(summary = "对该 task 跑一次评分；force=false 命中缓存返回历史评分")
+    public BaseResponse<JudgeRunVO> judge(
+            @PathVariable long taskId,
+            @RequestParam(required = false) String judgeModel,
+            @RequestParam(defaultValue = "false") boolean force) {
+        return ResultUtils.success(judgeService.judge(taskId, judgeModel, force));
     }
 
     @GetMapping("/{taskId}/history")
@@ -39,5 +38,11 @@ public class AdminReportJudgeController {
     @Operation(summary = "当前租户最近评分列表")
     public BaseResponse<List<JudgeRunVO>> recent(@RequestParam(defaultValue = "20") int limit) {
         return ResultUtils.success(judgeService.listForCurrentTenant(limit));
+    }
+
+    @GetMapping("/models")
+    @Operation(summary = "可选裁判模型列表（来自 application.yml）")
+    public BaseResponse<List<String>> models() {
+        return ResultUtils.success(judgeService.listJudgeModels());
     }
 }

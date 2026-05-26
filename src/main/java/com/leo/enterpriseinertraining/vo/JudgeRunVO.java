@@ -31,4 +31,7 @@ public class JudgeRunVO implements Serializable {
 
     private Integer latencyMs;
     private Long createTime;
+
+    /** 关联任务的研究主题，便于前端列表展示。null 表示反查任务失败。 */
+    private String topic;
 }
