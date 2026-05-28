@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck, Document, Refresh, WarningFilled } from '@element-plus/icons-vue'
 import AdminPageHeader from '@/components/admin/AdminPageHeader.vue'
 import WorkflowGraph from '@/components/admin/WorkflowGraph.vue'
 import QueryRewritePanel from '@/components/admin/QueryRewritePanel.vue'
 import { adminApi } from '@/api/admin'
-import {
-  mockActiveWorkflow,
-  mockWorkflowLoadLog
-} from '@/mock/admin-placeholders'
+import type { ActiveWorkflowVO, WorkflowLogVO } from '@/types/admin'
+import { formatEpochMillis } from '@/utils/format'
 
 interface ReloadResult {
   status: 'success' | 'fail'
@@ -21,6 +19,23 @@ interface ReloadResult {
 const reloading = ref(false)
 const lastResult = ref<ReloadResult | null>(null)
 const logRef = ref<HTMLElement | null>(null)
+
+// F4 #3 + #4: 当前活跃 Workflow + 加载历史
+const activeWorkflow = ref<ActiveWorkflowVO | null>(null)
+const workflowLogs = ref<WorkflowLogVO[]>([])
+
+async function refreshAll() {
+  try {
+    const [active, logs] = await Promise.all([
+      adminApi.activeWorkflow(),
+      adminApi.workflowHistory(20)
+    ])
+    activeWorkflow.value = active
+    workflowLogs.value = logs
+  } catch {
+    /* 拦截器已 toast，保留旧数据 */
+  }
+}
 
 async function reload() {
   reloading.value = true
@@ -34,6 +49,8 @@ async function reload() {
       message: msg ?? '下次任务将使用最新 YAML'
     }
     ElMessage.success('Workflow 缓存已清空，下次任务将使用最新 YAML')
+    // ⚡ 关键：reload 完拉 active + history，时间轴会出现新日志条目
+    await refreshAll()
   } catch (e) {
     lastResult.value = {
       status: 'fail',
@@ -49,6 +66,33 @@ async function reload() {
 function scrollToLog() {
   logRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+/** 日志时间轴 type 映射 */
+function timelineType(level: WorkflowLogVO['level']) {
+  if (level === 'success') return 'success'
+  if (level === 'warning') return 'warning'
+  if (level === 'error') return 'danger'
+  return 'primary'
+}
+
+/** 日志 eventType → 中文事件名（设计图里手写的） */
+function eventName(t: WorkflowLogVO['eventType']) {
+  return ({
+    cache_clear: '缓存清空',
+    yaml_reload: 'YAML 重新加载',
+    topology_check: '节点校验',
+    activate: '工作流生效'
+  } as const)[t]
+}
+
+/** 加载日志的时间显示成 HH:mm:ss，与设计图一致 */
+function logClock(ts: number) {
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+onMounted(refreshAll)
 </script>
 
 <template>
@@ -59,25 +103,32 @@ function scrollToLog() {
     />
 
     <section class="top-row">
-      <!-- 当前活跃 Workflow -->
+      <!-- F4 #3: 当前活跃 Workflow（真实接口） -->
       <div class="card">
         <header class="card-header">
           <h3>当前活跃 Workflow</h3>
+          <el-button :icon="Refresh" link size="small" @click="refreshAll">刷新</el-button>
         </header>
-        <!-- TODO(backend-api-gap #4): 待 /admin/workflow/active 上线后改为接口 -->
-        <div class="info-grid">
-          <div><span>Workflow</span><b>{{ mockActiveWorkflow.name }}</b></div>
-          <div><span>版本</span><b>{{ mockActiveWorkflow.version }}</b></div>
-          <div><span>文件</span><b class="mono">{{ mockActiveWorkflow.file }}</b></div>
-          <div><span>节点</span><b>{{ mockActiveWorkflow.nodes.join(' → ') }}</b></div>
-          <div><span>最近加载</span><b>{{ mockActiveWorkflow.lastLoadedAt }}</b></div>
+        <div v-if="activeWorkflow" class="info-grid">
+          <div><span>Workflow</span><b>{{ activeWorkflow.name }}</b></div>
+          <div><span>版本</span><b>{{ activeWorkflow.version }}</b></div>
+          <div><span>文件</span><b class="mono">{{ activeWorkflow.file }}</b></div>
+          <div><span>节点</span><b>{{ activeWorkflow.nodes.join(' → ') }}</b></div>
+          <div><span>最近加载</span><b>{{ formatEpochMillis(activeWorkflow.lastLoadedAt) }}</b></div>
           <div>
             <span>缓存状态</span>
-            <el-tag size="small" type="success">{{ mockActiveWorkflow.cached ? '已缓存' : '未缓存' }}</el-tag>
+            <el-tag size="small" :type="activeWorkflow.cached ? 'success' : 'info'">
+              {{ activeWorkflow.cached ? '已缓存' : '未缓存' }}
+            </el-tag>
           </div>
         </div>
+        <div v-else class="empty">加载中…</div>
 
-        <WorkflowGraph :nodes="mockActiveWorkflow.nodes" style="margin: 16px 0" />
+        <WorkflowGraph
+          v-if="activeWorkflow"
+          :nodes="activeWorkflow.nodes"
+          style="margin: 16px 0"
+        />
 
         <el-alert
           type="warning"
@@ -131,22 +182,22 @@ function scrollToLog() {
       </div>
     </section>
 
-    <!-- 最近加载日志（mock） -->
+    <!-- F4 #4: 最近加载日志（真实接口） -->
     <div ref="logRef" class="card">
       <header class="card-header">
         <h3>最近加载日志</h3>
-        <a class="link">查看完整日志 ›</a>
+        <el-button :icon="Refresh" link size="small" @click="refreshAll">刷新</el-button>
       </header>
-      <!-- TODO(backend-api-gap #5): 待 /admin/workflow/history 上线后改为接口 -->
-      <el-timeline>
+      <el-empty v-if="workflowLogs.length === 0" description="暂无加载日志" :image-size="60" />
+      <el-timeline v-else>
         <el-timeline-item
-          v-for="(row, i) in mockWorkflowLoadLog"
+          v-for="(row, i) in workflowLogs"
           :key="i"
-          :type="row.level === 'success' ? 'success' : row.level === 'warning' ? 'warning' : 'primary'"
-          :timestamp="row.time"
+          :type="timelineType(row.level)"
+          :timestamp="logClock(row.ts)"
         >
-          <div class="log-event">{{ row.event }}</div>
-          <div class="log-detail">{{ row.detail }}</div>
+          <div class="log-event">{{ eventName(row.eventType) }}</div>
+          <div class="log-detail">{{ row.message }}</div>
         </el-timeline-item>
       </el-timeline>
     </div>

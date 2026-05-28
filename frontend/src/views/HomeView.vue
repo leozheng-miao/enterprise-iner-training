@@ -15,6 +15,7 @@ import {
   formatNumber,
   formatPercent
 } from '@/utils/format'
+import { buildStatDelta } from '@/utils/statDelta'
 import { STATUS_LABEL } from '@/utils/taskStatus'
 
 const auth = useAuthStore()
@@ -51,11 +52,31 @@ onMounted(async () => {
 const statItems = computed<StatItem[]>(() => {
   const o = overview.value
   if (!o) return []
+  const w = o.compareWindowLabel
+  // F4 #8: P95 优先，窗口内 DONE < 20 时 fallback avg
+  const useP95 = o.p95TaskLatencyMs != null
   return [
-    { key: 'total',   label: '总任务数',      value: formatNumber(o.totalTasks),         iconName: 'Document',  iconBg: '#dbeafe' },
-    { key: 'success', label: '成功率',        value: formatPercent(o.taskSuccessRate),   iconName: 'Histogram', iconBg: '#dcfce7' },
-    { key: 'cost',    label: '总 Token 成本', value: formatCny(o.totalCostCny),          iconName: 'Money',     iconBg: '#fef3c7' },
-    { key: 'avg',     label: '平均耗时',      value: formatNumber(o.avgTaskLatencyMs),   unit: 'ms', iconName: 'Timer', iconBg: '#ede9fe' }
+    {
+      key: 'total',   label: '总任务数', value: formatNumber(o.totalTasks),
+      iconName: 'Document',  iconBg: '#dbeafe',
+      delta: buildStatDelta(o.totalTasksDelta, w, 'count', true)
+    },
+    {
+      key: 'success', label: '成功率', value: formatPercent(o.taskSuccessRate),
+      iconName: 'Histogram', iconBg: '#dcfce7',
+      delta: buildStatDelta(o.taskSuccessRateDelta, w, 'percent', true)
+    },
+    {
+      key: 'cost',    label: '总 Token 成本', value: formatCny(o.totalCostCny),
+      iconName: 'Money',     iconBg: '#fef3c7',
+      delta: buildStatDelta(o.totalCostCnyDelta, w, 'cny', false)
+    },
+    {
+      key: 'lat',     label: useP95 ? 'P95 耗时' : '平均耗时',
+      value: formatNumber(useP95 ? o.p95TaskLatencyMs : o.avgTaskLatencyMs),
+      unit: 'ms', iconName: 'Timer', iconBg: '#ede9fe',
+      delta: buildStatDelta(o.avgTaskLatencyMsDelta, w, 'ms', false)
+    }
   ]
 })
 

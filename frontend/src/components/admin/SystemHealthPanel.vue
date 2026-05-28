@@ -1,39 +1,59 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Cloudy, CoffeeCup, Connection } from '@element-plus/icons-vue'
-import { apiGet } from '@/api/client'
-import { mockSystemHealthExtras } from '@/mock/admin-placeholders'
+import { healthApi } from '@/api/health'
+import type { ComponentHealthVO } from '@/types/admin'
 
-interface HealthApiRow {
-  status: string
-  time: string
-}
+const components = ref<ComponentHealthVO[]>([])
 
-const apiLatencyMs = ref<number | null>(null)
-const apiStatus = ref<'UP' | 'DOWN'>('UP')
-
-const iconMap = {
-  CoffeeCup,
-  Connection,
-  CloudFilled: Cloudy
+// name → 图标 / 背景色映射（API/Redis/SSE 三档样式）
+const VISUAL = {
+  API:   { icon: Cloudy,     bg: '#e0f2fe', color: '#0284c7' },
+  Redis: { icon: CoffeeCup,  bg: '#fee2e2', color: '#dc2626' },
+  SSE:   { icon: Connection, bg: '#ede9fe', color: '#7c3aed' }
 } as const
 
-async function pingApi() {
-  const start = performance.now()
+function visualOf(name: string) {
+  return VISUAL[name as keyof typeof VISUAL] ?? VISUAL.API
+}
+
+/** 状态 → el-tag type 映射 */
+function statusType(s: ComponentHealthVO['status']) {
+  if (s === 'UP') return 'success'
+  if (s === 'DEGRADED') return 'warning'
+  return 'danger'
+}
+function statusLabel(s: ComponentHealthVO['status']) {
+  if (s === 'UP') return '正常'
+  if (s === 'DEGRADED') return '降级'
+  return '异常'
+}
+
+/** 拼右下角的小副文，例如 "响应时间 1.2 ms" / "连接数 12" / "—" */
+function metricOf(row: ComponentHealthVO): string {
+  const conns = row.extra && typeof row.extra.connections === 'number'
+    ? (row.extra.connections as number)
+    : null
+  if (conns != null) return `连接数 ${conns}`
+  if (row.latencyMs == null) return '—'
+  return `响应时间 ${row.latencyMs.toFixed(1)} ms`
+}
+
+async function poll() {
   try {
-    await apiGet<HealthApiRow>('/health')
-    apiLatencyMs.value = Math.round(performance.now() - start)
-    apiStatus.value = 'UP'
+    components.value = await healthApi.components()
   } catch {
-    apiLatencyMs.value = null
-    apiStatus.value = 'DOWN'
+    // 接口完全不可达时给一个本地兜底（API DOWN）
+    components.value = [
+      { name: 'API', status: 'DOWN', subtitle: '后端接口服务', latencyMs: null, extra: null }
+    ]
   }
 }
 
 let timer: number | null = null
 onMounted(() => {
-  pingApi()
-  timer = window.setInterval(pingApi, 60_000)
+  poll()
+  timer = window.setInterval(poll, 60_000)
 })
 onBeforeUnmount(() => {
   if (timer !== null) window.clearInterval(timer)
@@ -46,40 +66,23 @@ onBeforeUnmount(() => {
       <h3>系统健康</h3>
     </header>
 
-    <div class="row">
-      <div class="row-icon api">
-        <el-icon :size="20"><Cloudy /></el-icon>
+    <div v-for="row in components" :key="row.name" class="row">
+      <div class="row-icon" :style="{ background: visualOf(row.name).bg, color: visualOf(row.name).color }">
+        <el-icon :size="20"><component :is="visualOf(row.name).icon" /></el-icon>
       </div>
       <div class="row-body">
-        <div class="row-name">API 服务</div>
-        <div class="row-sub">后端接口服务</div>
-      </div>
-      <div class="row-status">
-        <el-tag :type="apiStatus === 'UP' ? 'success' : 'danger'" size="small">
-          {{ apiStatus === 'UP' ? '正常' : '异常' }}
-        </el-tag>
-        <div class="row-metric">
-          响应时间 {{ apiLatencyMs == null ? '—' : `${apiLatencyMs} ms` }}
-        </div>
-      </div>
-    </div>
-
-    <!-- TODO(backend-api-gap #1): 以下两条为 mock 子服务，待 /api/health/components 上线后接入 -->
-    <div v-for="row in mockSystemHealthExtras" :key="row.name" class="row">
-      <div class="row-icon" :class="row.iconName">
-        <el-icon :size="20"><component :is="iconMap[row.iconName]" /></el-icon>
-      </div>
-      <div class="row-body">
-        <div class="row-name">{{ row.name }}</div>
+        <div class="row-name">{{ row.name }} 服务</div>
         <div class="row-sub">{{ row.subtitle }}</div>
       </div>
       <div class="row-status">
-        <el-tag :type="row.status === 'UP' ? 'success' : 'danger'" size="small">
-          {{ row.status === 'UP' ? '正常' : '异常' }}
+        <el-tag :type="statusType(row.status)" size="small">
+          {{ statusLabel(row.status) }}
         </el-tag>
-        <div class="row-metric">{{ row.metric }}</div>
+        <div class="row-metric">{{ metricOf(row) }}</div>
       </div>
     </div>
+
+    <el-empty v-if="components.length === 0" description="加载中…" :image-size="60" />
   </div>
 </template>
 
@@ -111,11 +114,7 @@ onBeforeUnmount(() => {
   width: 36px; height: 36px;
   border-radius: 8px;
   display: grid; place-items: center;
-  background: #e0f2fe;
-  color: #0284c7;
 }
-.row-icon.CoffeeCup { background: #fee2e2; color: #dc2626; }
-.row-icon.Connection { background: #ede9fe; color: #7c3aed; }
 .row-body { flex: 1; min-width: 0; }
 .row-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .row-sub { font-size: 12px; color: var(--text-tertiary); }

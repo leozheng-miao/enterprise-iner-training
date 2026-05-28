@@ -14,7 +14,9 @@ import type {
   PromptCreateRequest,
   PromptUpdateRequest,
   JudgeRunVO,
-  QueryRewriteVO
+  QueryRewriteVO,
+  ActiveWorkflowVO,
+  WorkflowLogVO
 } from '@/types/admin'
 
 // MyBatis-Flex 分页结构
@@ -49,15 +51,36 @@ export const adminApi = {
     apiPost<PromptTemplateVO>(`/admin/prompts/${id}/activate`),
 
   // ── LLM-as-Judge ──
-  judgeRun: (taskId: number) =>
-    apiPost<JudgeRunVO>(`/admin/eval/judge/${taskId}`),
+  /**
+   * 触发一次 Judge 评分。F4 起支持指定裁判模型与缓存控制。
+   * @param taskId 目标任务 ID
+   * @param opts.judgeModel 可选裁判模型，省略则后端用默认（qwen-max）
+   * @param opts.force false（默认）命中 (task,model,rubric) 缓存就返回历史；true 强制重新调 LLM
+   */
+  judgeRun: (
+    taskId: number,
+    opts: { judgeModel?: string; force?: boolean } = {}
+  ) => {
+    const params = new URLSearchParams()
+    if (opts.judgeModel) params.append('judgeModel', opts.judgeModel)
+    if (opts.force) params.append('force', 'true')
+    const qs = params.toString() ? `?${params.toString()}` : ''
+    return apiPost<JudgeRunVO>(`/admin/eval/judge/${taskId}${qs}`)
+  },
   judgeHistory: (taskId: number) =>
     apiGet<JudgeRunVO[]>(`/admin/eval/judge/${taskId}/history`),
   judgeRecent: (limit = 20) =>
     apiGet<JudgeRunVO[]>('/admin/eval/judge', { limit }),
+  /** F4 #6: 获取可选裁判模型列表（来自后端 application.yml）。 */
+  judgeModels: () => apiGet<string[]>('/admin/eval/judge/models'),
 
   // ── Workflow & Query 改写 ──
   reloadWorkflow: () => apiPost<string>('/admin/workflow/reload'),
+  /** F4 #3: 当前活跃 Workflow 元信息。 */
+  activeWorkflow: () => apiGet<ActiveWorkflowVO>('/admin/workflow/active'),
+  /** F4 #4: Workflow 加载日志时间轴（最近 N 条，倒序）。 */
+  workflowHistory: (limit = 20) =>
+    apiGet<WorkflowLogVO[]>('/admin/workflow/history', { limit }),
   rewriteQuery: (topic: string) =>
     apiPost<QueryRewriteVO>('/admin/query-rewrite', { topic })
 }

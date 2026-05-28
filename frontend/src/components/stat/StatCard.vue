@@ -32,8 +32,9 @@ const iconComponent = computed(() => {
         {{ item.value }}<span v-if="item.unit" class="stat-unit">{{ item.unit }}</span>
       </div>
       <div v-if="item.delta" class="stat-delta">
-        {{ item.delta.note }} <span class="delta-raw">{{ item.delta.raw }}</span>
-        <span class="delta-percent" :class="item.delta.trend">({{ item.delta.percent }})</span>
+        {{ item.delta.note }}
+        <span class="delta-raw" :class="item.delta.trend">{{ item.delta.raw }}</span>
+        <span v-if="item.delta.percent" class="delta-percent" :class="item.delta.trend">({{ item.delta.percent }})</span>
       </div>
     </div>
   </div>
@@ -76,7 +77,9 @@ const iconComponent = computed(() => {
 }
 .stat-unit { font-size: 14px; color: var(--text-secondary); margin-left: 4px; }
 .stat-delta { margin-top: 6px; font-size: 12px; color: var(--text-tertiary); }
-.delta-raw { color: var(--text-secondary); font-weight: 500; }
+.delta-raw { font-weight: 500; }
+.delta-raw.up,
 .delta-percent.up { color: var(--color-success); }
+.delta-raw.down,
 .delta-percent.down { color: var(--color-danger); }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ArrowDown } from '@element-plus/icons-vue'
 import JudgeScoreRadar from '@/components/admin/JudgeScoreRadar.vue'
 import type { JudgeRunVO } from '@/types/admin'
 import { formatEpochMillis } from '@/utils/format'
@@ -12,21 +13,22 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', v: boolean): void
-  (e: 're-run'): void
+  /** F4 #7: force=true 强制重评；false 命中缓存。 */
+  (e: 're-run', force: boolean): void
 }>()
 
 const grade = computed(() => {
-  if (!props.run) return ''
-  const o = props.run.overall
+  const o = props.run?.overall
+  if (o == null) return '—'
   if (o >= 9) return '优秀'
   if (o >= 7) return '良好'
   if (o >= 5) return '待提升'
   return '不合格'
 })
 
-const gradeColor = computed(() => {
-  if (!props.run) return ''
-  const o = props.run.overall
+const gradeColor = computed<'success' | 'primary' | 'warning' | 'danger' | 'info'>(() => {
+  const o = props.run?.overall
+  if (o == null) return 'info'
   if (o >= 9) return 'success'
   if (o >= 7) return 'primary'
   if (o >= 5) return 'warning'
@@ -37,15 +39,30 @@ const visible = computed({
   get: () => props.modelValue,
   set: (v) => emit('update:modelValue', v)
 })
+
+/** F4 #5: Drawer 标题携带 topic。 */
+const drawerTitle = computed(() => {
+  if (!props.run) return ''
+  const base = `评分详情 #${props.run.taskId}`
+  return props.run.topic ? `${base} · ${props.run.topic}` : base
+})
+
+function fmtScore(v: number | null): string {
+  return v == null ? '—' : v.toFixed(1)
+}
+
+function onRerunCmd(cmd: 'cache' | 'force') {
+  emit('re-run', cmd === 'force')
+}
 </script>
 
 <template>
-  <el-drawer v-model="visible" :title="run ? `评分详情 #${run.taskId}` : ''" size="500">
+  <el-drawer v-model="visible" :title="drawerTitle" size="500">
     <template v-if="run">
       <div class="head">
         <div class="overall">
           <div class="overall-label">总分</div>
-          <div class="overall-value">{{ run.overall.toFixed(1) }} <span>/ 10</span></div>
+          <div class="overall-value">{{ fmtScore(run.overall) }} <span>/ 10</span></div>
           <el-tag :type="gradeColor" size="small" effect="light">{{ grade }}</el-tag>
         </div>
         <JudgeScoreRadar :run="run" class="radar-box" />
@@ -56,7 +73,7 @@ const visible = computed({
       <div class="meta">
         <div><span>评估规则</span><b>{{ run.rubricVersion }}</b></div>
         <div><span>裁判模型</span><b>{{ run.judgeModel }}</b></div>
-        <div><span>耗时</span><b>{{ run.latencyMs }} ms</b></div>
+        <div><span>耗时</span><b>{{ run.latencyMs == null ? '—' : `${run.latencyMs} ms` }}</b></div>
         <div><span>评估时间</span><b>{{ formatEpochMillis(run.createTime) }}</b></div>
       </div>
 
@@ -76,14 +93,26 @@ const visible = computed({
       </div>
 
       <div class="footer">
-        <el-button
-          type="primary"
-          size="large"
-          :loading="reRunLoading"
-          @click="emit('re-run')"
+        <!-- F4 #7: 再次评分二级菜单 -->
+        <el-dropdown
+          trigger="click"
+          :disabled="reRunLoading"
+          @command="onRerunCmd"
         >
-          {{ reRunLoading ? '评分中…' : '对该任务再次评分（约 5-15s）' }}
-        </el-button>
+          <el-button type="primary" size="large" :loading="reRunLoading">
+            <template v-if="reRunLoading">评分中…</template>
+            <template v-else>
+              再次评分
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </template>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="cache">使用缓存（瞬时）</el-dropdown-item>
+              <el-dropdown-item command="force" divided>强制重新评分（5-15s）</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </template>
   </el-drawer>
