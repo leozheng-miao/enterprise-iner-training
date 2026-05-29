@@ -17,6 +17,7 @@ import lombok.EqualsAndHashCode;
 public class PromptTemplate extends BaseEntity {
 
     private String name;
+    private String agentRole;   // Stage A 新增：Planner/Researcher/...（PromptResolutionAdvisor Stage B 用）
     private String version;
     private String content;
     private String model;
