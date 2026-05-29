@@ -46,3 +46,29 @@ rag:
     port: 9201
     scheme: http
     index: knowledge_chunk_bm25
+
+# v2.0 多 Provider LLM 配置。4 者均走 OpenAI 协议，仅 base-url/model 不同。
+# api-key 一律环境变量注入，禁止明文进 git。
+app:
+  llm:
+    providers:
+      dashscope:
+        base-url: https://dashscope.aliyuncs.com/compatible-mode
+        api-key: ${DASHSCOPE_API_KEY:}
+        model: qwen-max
+        temperature: 0.7
+      openai:
+        base-url: https://api.openai.com
+        api-key: ${OPENAI_API_KEY:}
+        model: gpt-4o
+        temperature: 0.7
+      deepseek:
+        base-url: https://api.deepseek.com
+        api-key: ${DEEPSEEK_API_KEY:}
+        model: deepseek-chat
+        temperature: 0.7
+      vllm:
+        base-url: ${VLLM_BASE_URL:http://localhost:8000}
+        api-key: ${VLLM_API_KEY:}
+        model: ${VLLM_MODEL:qwen2.5-1.5b-instruct}
+        temperature: 0.0
