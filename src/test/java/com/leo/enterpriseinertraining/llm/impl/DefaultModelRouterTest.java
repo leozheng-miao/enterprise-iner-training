@@ -50,7 +50,7 @@ class DefaultModelRouterTest {
             route(0L, "OPENAI", "gpt-4o",
                 "[\"gpt-4o-mini\"]",
                 "[{\"provider\":\"DASHSCOPE\",\"model\":\"qwen-max\"}]", 0)));
-        when(promptMapper.selectOneByQuery(any())).thenReturn(promptVer("v3"));
+        when(promptMapper.selectListByQuery(any())).thenReturn(List.of(promptVer("v3")));
 
         ResolvedRoute r = router.resolve(AgentRole.PLANNER, 0L);
 
@@ -68,7 +68,7 @@ class DefaultModelRouterTest {
         when(routingMapper.selectListByQuery(any())).thenReturn(List.of(
             route(0L, "DASHSCOPE", "qwen-max", null, null, 0),
             route(7L, "OPENAI", "gpt-4o", null, null, 0)));
-        when(promptMapper.selectOneByQuery(any())).thenReturn(null);
+        when(promptMapper.selectListByQuery(any())).thenReturn(List.of());
 
         ResolvedRoute r = router.resolve(AgentRole.PLANNER, 7L);
 
@@ -80,7 +80,7 @@ class DefaultModelRouterTest {
     void resolve_cachesWithin5s_secondCallHitsCache_noDbQuery() {
         when(routingMapper.selectListByQuery(any())).thenReturn(List.of(
             route(0L, "DASHSCOPE", "qwen-max", null, null, 0)));
-        when(promptMapper.selectOneByQuery(any())).thenReturn(null);
+        when(promptMapper.selectListByQuery(any())).thenReturn(List.of());
 
         router.resolve(AgentRole.PLANNER, 0L);
         router.resolve(AgentRole.PLANNER, 0L);
@@ -92,13 +92,26 @@ class DefaultModelRouterTest {
     void resolve_nullFallbackJson_yieldsEmptyLists() {
         when(routingMapper.selectListByQuery(any())).thenReturn(List.of(
             route(0L, "DASHSCOPE", "qwen-max", null, null, 0)));
-        when(promptMapper.selectOneByQuery(any())).thenReturn(null);
+        when(promptMapper.selectListByQuery(any())).thenReturn(List.of());
 
         ResolvedRoute r = router.resolve(AgentRole.PLANNER, 0L);
 
         assertThat(r.sameProviderFallbacks()).isEmpty();
         assertThat(r.crossProviderFallbacks()).isEmpty();
         assertThat(r.promptVersion()).isNull();
+    }
+
+    @Test
+    void resolve_multipleActivePromptRows_picksFirst_doesNotThrow() {
+        when(routingMapper.selectListByQuery(any())).thenReturn(List.of(
+            route(0L, "DASHSCOPE", "qwen-max", null, null, 0)));
+        // 模拟同 agent_role 多条 active（schema 未强约束唯一）：实现按 version desc limit 1，取首条；不应抛异常
+        when(promptMapper.selectListByQuery(any()))
+            .thenReturn(List.of(promptVer("v5"), promptVer("v4")));
+
+        ResolvedRoute r = router.resolve(AgentRole.PLANNER, 0L);
+
+        assertThat(r.promptVersion()).isEqualTo("v5");
     }
 
     private PromptTemplate promptVer(String v) {

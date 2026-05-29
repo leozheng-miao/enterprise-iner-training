@@ -81,14 +81,20 @@ public class DefaultModelRouter implements ModelRouter {
             sameFb, crossFb, crossEnabled, promptVersion);
     }
 
-    /** prompt_template 是全局表（无 tenant_id）：按 agent_role + is_active 取生效版本。 */
+    /**
+     * prompt_template 是全局表（无 tenant_id）：按 agent_role + is_active 取生效版本。
+     * 同一 agent_role 理论上仅一条 active，但 schema 不强约束唯一；故按 version 降序取最新一条，
+     * 避免多行时 selectOne 抛 TooManyResults 而被静默吞成 null（取最新版本是确定性行为）。
+     */
     private String resolvePromptVersion(AgentRole role) {
         try {
             QueryWrapper qw = QueryWrapper.create()
                 .where(PROMPT_TEMPLATE.AGENT_ROLE.eq(role.code()))
-                .and(PROMPT_TEMPLATE.IS_ACTIVE.eq(1));
-            PromptTemplate t = promptMapper.selectOneByQuery(qw);
-            return t == null ? null : t.getVersion();
+                .and(PROMPT_TEMPLATE.IS_ACTIVE.eq(1))
+                .orderBy(PROMPT_TEMPLATE.VERSION.desc())
+                .limit(1);
+            List<PromptTemplate> rows = promptMapper.selectListByQuery(qw);
+            return (rows == null || rows.isEmpty()) ? null : rows.get(0).getVersion();
         } catch (Exception e) {
             log.warn("[ModelRouter] 读 promptVersion 失败 role={}: {}", role.code(), e.getMessage());
             return null;
