@@ -10,6 +10,9 @@ import lombok.EqualsAndHashCode;
 public class WorkflowNodeRun extends BaseEntity {
 
     private Long taskId;
+    private String traceId;          // Stage A 加列；写值在 Stage B TraceAdvisor
+    private String spanId;
+    private String routingSnapshot;  // ResolvedRoute.toJson() 快照
     private String nodeId;
     private String agentRole;
     private String stepType;       // LLM_CALL / TOOL_CALL
